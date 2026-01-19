@@ -123,6 +123,14 @@ namespace application {
         }
     }
 
+    std::vector<const char*> Window::required_vulkan_extensions()
+    {
+        u32 count = 0;
+        const char** extensions = glfwGetRequiredInstanceExtensions(&count);
+
+        return std::vector<const char*>(extensions, extensions + count);
+    }
+
     void Window::poll_events()
     {
         glfwPollEvents();

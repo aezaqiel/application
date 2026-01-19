@@ -38,6 +38,12 @@ add_executable(${PROJECT_NAME}
     src/renderer/renderer.hpp
     src/renderer/renderer.cpp
 
+    src/renderer/rhi/vktypes.hpp
+    src/renderer/rhi/context.hpp
+    src/renderer/rhi/context.cpp
+    src/renderer/rhi/device.hpp
+    src/renderer/rhi/device.cpp
+
     src/platform/vma_impl.cpp
 )
 

@@ -19,6 +19,7 @@ namespace application {
         Window(u32 width, u32 height, const std::string& title);
         ~Window();
 
+        GLFWwindow* native() const { return m_window; }
         u32 width() const { return m_data.width; }
         u32 height() const { return m_data.height; }
 
@@ -26,6 +27,8 @@ namespace application {
         {
             m_data.callback = std::forward<EventCallback>(callback);
         }
+
+        static std::vector<const char*> required_vulkan_extensions();
 
     protected:
         static void poll_events();
