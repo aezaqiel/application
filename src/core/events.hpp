@@ -47,6 +47,8 @@ namespace application {
     {
         friend class Application;
     public:
+        EventDispatcher() = default;
+
         template <IsEvent T, typename Callback>
         void subscribe(Callback&& callback)
         {
@@ -93,7 +95,7 @@ namespace application {
                 }(static_cast<VariantType*>(nullptr));
 
                 return found ? idx : std::variant_npos;
-            };
+            }();
         };
 
         #ifdef __cpp_lib_move_only_function

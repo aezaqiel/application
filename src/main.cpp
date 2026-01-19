@@ -1,6 +1,7 @@
-#include <print>
+#include "core/application.hpp"
 
 int main()
 {
-    std::println("application");
+    auto app = std::make_unique<application::Application>();
+    app->run();
 }
