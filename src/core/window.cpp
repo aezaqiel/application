@@ -55,6 +55,63 @@ namespace application {
                 data.callback(WindowResizedEvent(data.width, data.height));
             }
         });
+
+        glfwSetKeyCallback(m_window, [](GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods) {
+            WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+            if (!data.callback) return;
+
+            switch (action) {
+                case GLFW_PRESS: {
+                    data.callback(KeyPressedEvent(static_cast<KeyCode>(key), false));
+                } break;
+                case GLFW_RELEASE: {
+                    data.callback(KeyReleasedEvent(static_cast<KeyCode>(key)));
+                } break;
+                case GLFW_REPEAT: {
+                    data.callback(KeyPressedEvent(static_cast<KeyCode>(key), true));
+                } break;
+                default: std::println("unknown key action ({})", action); return;
+            }
+        });
+
+        glfwSetCharCallback(m_window, [](GLFWwindow* window, u32 codepoint) {
+            WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+            if (data.callback) {
+                data.callback(KeyTypedEvent(codepoint));
+            }
+        });
+
+        glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, i32 button, i32 action, i32 mods) {
+            WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+            if (!data.callback) return;
+
+            switch (action) {
+                case GLFW_PRESS: {
+                    data.callback(MouseButtonPressedEvent(static_cast<MouseButton>(button)));
+                } break;
+                case GLFW_RELEASE: {
+                    data.callback(MouseButtonReleasedEvent(static_cast<MouseButton>(button)));
+                } break;
+                default: std::println("unknown mouse button action ({})", action); return;
+            }
+        });
+
+        glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, f64 x, f64 y) {
+            WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+            if (data.callback) {
+                data.callback(MouseMovedEvent(static_cast<f32>(x), static_cast<f32>(y)));
+            }
+        });
+
+        glfwSetScrollCallback(m_window, [](GLFWwindow* window, f64 x, f64 y) {
+            WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+            if (data.callback) {
+                data.callback(MouseScrolledEvent(static_cast<f32>(x), static_cast<f32>(y)));
+            }
+        });
     }
 
     Window::~Window()

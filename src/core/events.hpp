@@ -19,7 +19,7 @@ namespace application {
 
     struct WindowMinimizedEvent final : public BaseEvent
     {
-        bool minimized { false };
+        bool minimized;
 
         explicit constexpr WindowMinimizedEvent(bool minimized) noexcept
             : minimized(minimized) {}
@@ -27,11 +27,85 @@ namespace application {
 
     struct WindowResizedEvent final : public BaseEvent
     {
-        u32 width { 0 };
-        u32 height { 0 };
+        u32 width;
+        u32 height;
 
         explicit constexpr WindowResizedEvent(u32 w, u32 h) noexcept
             : width(w), height(h) {}
+    };
+
+    struct KeyEvent : public BaseEvent
+    {
+        KeyCode keycode;
+
+    protected:
+        constexpr KeyEvent(const KeyCode& keycode) noexcept
+            : keycode(keycode) {}
+    };
+
+    struct KeyPressedEvent final : public KeyEvent
+    {
+        bool repeat;
+
+        explicit constexpr KeyPressedEvent(KeyCode keycode, bool repeat) noexcept
+            : KeyEvent(keycode), repeat(repeat) {}
+    };
+
+    struct KeyReleasedEvent final : public KeyEvent
+    {
+        explicit constexpr KeyReleasedEvent(KeyCode keycode) noexcept
+            : KeyEvent(keycode) {}
+    };
+
+    struct KeyTypedEvent final : public BaseEvent
+    {
+        u32 codepoint;
+
+        explicit constexpr KeyTypedEvent(u32 codepoint) noexcept
+            : codepoint(codepoint) {}
+    };
+
+    struct MouseButtonEvent : public BaseEvent
+    {
+        MouseButton button;
+
+    protected:
+        constexpr MouseButtonEvent(MouseButton button) noexcept
+            : button(button) {}
+    };
+
+    struct MouseButtonPressedEvent final : public MouseButtonEvent
+    {
+        explicit constexpr MouseButtonPressedEvent(MouseButton button) noexcept
+            : MouseButtonEvent(button) {}
+    };
+
+    struct MouseButtonReleasedEvent final : public MouseButtonEvent
+    {
+        explicit constexpr MouseButtonReleasedEvent(MouseButton button) noexcept
+            : MouseButtonEvent(button) {}
+    };
+
+    struct MouseEvent : public BaseEvent
+    {
+        f32 x;
+        f32 y;
+
+    protected:
+        constexpr MouseEvent(f32 x, f32 y) noexcept
+            : x(x), y(y) {}
+    };
+
+    struct MouseMovedEvent final : public MouseEvent
+    {
+        explicit constexpr MouseMovedEvent(f32 x, f32 y) noexcept
+            : MouseEvent(x, y) {}
+    };
+
+    struct MouseScrolledEvent final : public MouseEvent
+    {
+        explicit constexpr MouseScrolledEvent(f32 x, f32 y) noexcept
+            : MouseEvent(x, y) {}
     };
 
     template <IsEvent... T>
@@ -40,7 +114,14 @@ namespace application {
     using Event = EventVariant<
         WindowClosedEvent,
         WindowMinimizedEvent,
-        WindowResizedEvent
+        WindowResizedEvent,
+        KeyPressedEvent,
+        KeyReleasedEvent,
+        KeyTypedEvent,
+        MouseButtonPressedEvent,
+        MouseButtonReleasedEvent,
+        MouseMovedEvent,
+        MouseScrolledEvent
     >;
 
     class EventDispatcher
