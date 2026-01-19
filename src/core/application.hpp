@@ -2,6 +2,7 @@
 
 #include "events.hpp"
 #include "window.hpp"
+#include "input.hpp"
 
 namespace application {
 
@@ -22,6 +23,7 @@ namespace application {
 
         std::unique_ptr<EventDispatcher> m_dispatcher;
         std::unique_ptr<Window> m_window;
+        std::unique_ptr<Input> m_input;
     };
 
 }

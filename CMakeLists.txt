@@ -21,6 +21,8 @@ add_executable(${PROJECT_NAME}
     src/core/events.hpp
     src/core/window.hpp
     src/core/window.cpp
+    src/core/input.hpp
+    src/core/input.cpp
     src/core/application.hpp
     src/core/application.cpp
 )
