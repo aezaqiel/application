@@ -45,6 +45,7 @@ namespace application {
 
     class EventDispatcher
     {
+        friend class Application;
     public:
         template <IsEvent T, typename Callback>
         void subscribe(Callback&& callback)
