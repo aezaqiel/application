@@ -25,6 +25,9 @@ add_executable(${PROJECT_NAME}
     src/core/input.cpp
     src/core/application.hpp
     src/core/application.cpp
+
+    src/renderer/renderer.hpp
+    src/renderer/renderer.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

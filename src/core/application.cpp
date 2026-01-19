@@ -6,12 +6,7 @@ namespace application {
     {
         m_dispatcher = std::make_unique<EventDispatcher>();
 
-        m_window = std::make_unique<Window>(1280, 720, "application");
-        m_window->bind_event_callback([this](const Event& event) constexpr {
-            dispatch_events(event);
-        });
-
-        m_input = std::make_unique<Input>(*m_dispatcher);
+        // --- priority events ---
 
         m_dispatcher->subscribe<WindowClosedEvent>([this](const WindowClosedEvent& e) -> bool {
             m_running = false;
@@ -22,6 +17,17 @@ namespace application {
             m_minimized = e.minimized;
             return false;
         });
+
+        // -----------------------
+
+        m_window = std::make_unique<Window>(1280, 720, "application");
+        m_window->bind_event_callback([this](const Event& event) constexpr {
+            dispatch_events(event);
+        });
+
+        m_input = std::make_unique<Input>(*m_dispatcher);
+
+        m_renderer = std::make_unique<Renderer>(*m_window, *m_dispatcher);
     }
 
     void Application::run()
@@ -30,9 +36,8 @@ namespace application {
             m_input->update();
             Window::poll_events();
 
-            if (Input::key_down(KeyCode::Escape)) m_running = false;
-
             if (!m_minimized) {
+                m_renderer->draw();
             }
         }
     }

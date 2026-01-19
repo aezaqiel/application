@@ -4,6 +4,8 @@
 #include "window.hpp"
 #include "input.hpp"
 
+#include "renderer/renderer.hpp"
+
 namespace application {
 
     class Application
@@ -24,6 +26,8 @@ namespace application {
         std::unique_ptr<EventDispatcher> m_dispatcher;
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Input> m_input;
+
+        std::unique_ptr<Renderer> m_renderer;
     };
 
 }
