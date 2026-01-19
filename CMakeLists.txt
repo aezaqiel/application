@@ -13,11 +13,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+
+    src/core/types.hpp
 )
 
 target_include_directories(${PROJECT_NAME}
 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_precompile_headers(${PROJECT_NAME}
+PRIVATE
+    src/pch.hpp
 )
 
 if(WIN32)
