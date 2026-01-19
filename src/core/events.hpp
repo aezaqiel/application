@@ -68,7 +68,14 @@ namespace application {
             );
         }
 
-    protected:
+        template <IsEvent T, typename Class>
+        void subscribe(Class* instance, bool(Class::*method)(const T&))
+        {
+            subscribe<T>([instance, method](const T& e) -> bool {
+                return (instance->*method)(e);
+            });
+        }
+
         void dispatch(const Event& e)
         {
             if (e.valueless_by_exception()) [[unlikely]] return;
