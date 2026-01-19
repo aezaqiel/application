@@ -15,6 +15,8 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 
     src/core/types.hpp
+    src/core/keycodes.hpp
+    src/core/events.hpp
 )
 
 target_include_directories(${PROJECT_NAME}
