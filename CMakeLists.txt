@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_subdirectory(thirdparty/glfw)
+
 add_executable(${PROJECT_NAME}
     src/main.cpp
 
@@ -24,6 +26,16 @@ PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+target_link_libraries(${PROJECT_NAME}
+PRIVATE
+    glfw
+)
+
+target_compile_definitions(${PROJECT_NAME}
+PRIVATE
+    GLFW_INCLUDE_NONE
+)
+
 target_precompile_headers(${PROJECT_NAME}
 PRIVATE
     src/pch.hpp
@@ -33,6 +45,7 @@ if(WIN32)
     target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         NOMINMAX
+        GLFW_EXPOSE_NATIVE_WIN32
     )
 endif()
 
