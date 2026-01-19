@@ -20,6 +20,7 @@ endif()
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/volk)
 add_subdirectory(thirdparty/vma)
+add_subdirectory(thirdparty/glm)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -50,11 +51,13 @@ PRIVATE
     glfw
     volk
     VulkanMemoryAllocator
+    glm
 )
 
 target_compile_definitions(${PROJECT_NAME}
 PRIVATE
     GLFW_INCLUDE_NONE
+    GLM_ENABLE_EXPERIMENTAL
 )
 
 target_precompile_headers(${PROJECT_NAME}
