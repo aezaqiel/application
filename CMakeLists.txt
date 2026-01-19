@@ -19,6 +19,7 @@ endif()
 
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/volk)
+add_subdirectory(thirdparty/vma)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -35,6 +36,8 @@ add_executable(${PROJECT_NAME}
 
     src/renderer/renderer.hpp
     src/renderer/renderer.cpp
+
+    src/platform/vma_impl.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -46,6 +49,7 @@ target_link_libraries(${PROJECT_NAME}
 PRIVATE
     glfw
     volk
+    VulkanMemoryAllocator
 )
 
 target_compile_definitions(${PROJECT_NAME}
@@ -71,6 +75,7 @@ if(NOT MSVC)
     PRIVATE
         -fno-rtti
         -fno-exceptions
+        -Wno-nullability-completeness
     )
 else()
     target_compile_options(${PROJECT_NAME}

@@ -4,3 +4,6 @@
 [submodule "thirdparty/volk"]
 	path = thirdparty/volk
 	url = https://github.com/aezaqiel/volk
+[submodule "thirdparty/vma"]
+	path = thirdparty/vma
+	url = https://github.com/aezaqiel/VulkanMemoryAllocator
