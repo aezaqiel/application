@@ -1,3 +1,6 @@
 [submodule "thirdparty/glfw"]
 	path = thirdparty/glfw
 	url = https://github.com/aezaqiel/glfw
+[submodule "thirdparty/volk"]
+	path = thirdparty/volk
+	url = https://github.com/aezaqiel/volk
