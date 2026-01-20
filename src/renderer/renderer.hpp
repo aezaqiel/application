@@ -5,6 +5,7 @@
 
 #include "rhi/context.hpp"
 #include "rhi/device.hpp"
+#include "rhi/swapchain.hpp"
 
 namespace application {
 
@@ -22,6 +23,8 @@ namespace application {
 
         std::unique_ptr<Context> m_context;
         std::unique_ptr<Device> m_device;
+
+        std::unique_ptr<Swapchain> m_swapchain;
     };
 
 }
