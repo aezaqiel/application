@@ -45,6 +45,8 @@ add_executable(${PROJECT_NAME}
     src/renderer/rhi/device.cpp
     src/renderer/rhi/swapchain.hpp
     src/renderer/rhi/swapchain.cpp
+    src/renderer/rhi/command.hpp
+    src/renderer/rhi/command.cpp
 
     src/platform/vma_impl.cpp
 )

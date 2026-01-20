@@ -25,9 +25,9 @@ namespace application {
         VkDevice device() const { return m_device; }
         VmaAllocator allocator() const { return m_allocator; }
 
-        u32 graphics_index() const { return m_queue_indices.graphics; }
-        u32 compute_index()  const { return m_queue_indices.compute;  }
-        u32 transfer_index() const { return m_queue_indices.transfer; }
+        u32 graphics_family() const { return m_queue_indices.graphics; }
+        u32 compute_family()  const { return m_queue_indices.compute;  }
+        u32 transfer_family() const { return m_queue_indices.transfer; }
 
         VkPhysicalDeviceProperties props() const { return m_props.properties; }
         VkPhysicalDeviceAccelerationStructurePropertiesKHR as_props() const { return m_as_props; }

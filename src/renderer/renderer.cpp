@@ -12,6 +12,10 @@ namespace application {
         m_device = std::make_unique<Device>(*m_context);
 
         m_swapchain = std::make_unique<Swapchain>(*m_context, *m_device);
+
+        for (auto& frame : m_frames) {
+            frame.command_pool = std::make_unique<CommandPool>(*m_device, m_device->graphics_family());
+        }
     }
 
     Renderer::~Renderer()
