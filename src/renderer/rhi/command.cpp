@@ -7,7 +7,7 @@ namespace application {
     {
     }
 
-    void CommandList::begin()
+    void CommandList::begin() const
     {
         VkCommandBufferBeginInfo begin_info {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -19,9 +19,25 @@ namespace application {
         VK_CHECK(vkBeginCommandBuffer(m_cmd, &begin_info));
     }
 
-    void CommandList::end()
+    void CommandList::end() const
     {
         VK_CHECK(vkEndCommandBuffer(m_cmd));
+    }
+
+    VkCommandBufferSubmitInfo CommandList::submit_info() const 
+    {
+        return VkCommandBufferSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+            .pNext = nullptr,
+            .commandBuffer = m_cmd,
+            .deviceMask = 0
+        };
+    }
+
+    void CommandList::barrier(BarrierBatch& barrier) const
+    {
+        auto dependency = barrier.dependency();
+        vkCmdPipelineBarrier2(m_cmd, &dependency);
     }
 
     CommandPool::CommandPool(const Device& device, u32 queue_family)
@@ -47,7 +63,7 @@ namespace application {
         VK_CHECK(vkResetCommandPool(m_device.device(), m_pool, flags));
     }
 
-    VkCommandBuffer CommandPool::allocate()
+    CommandList CommandPool::allocate()
     {
         VkCommandBufferAllocateInfo allocate_info {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -60,7 +76,7 @@ namespace application {
         VkCommandBuffer cmd;
         VK_CHECK(vkAllocateCommandBuffers(m_device.device(), &allocate_info, &cmd));
 
-        return cmd;
+        return CommandList(cmd);
     }
 
 }

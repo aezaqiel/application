@@ -47,6 +47,12 @@ add_executable(${PROJECT_NAME}
     src/renderer/rhi/swapchain.cpp
     src/renderer/rhi/command.hpp
     src/renderer/rhi/command.cpp
+    src/renderer/rhi/queue.hpp
+    src/renderer/rhi/queue.cpp
+    src/renderer/rhi/semaphores.hpp
+    src/renderer/rhi/semaphores.cpp
+    src/renderer/rhi/barrier.hpp
+    src/renderer/rhi/barrier.cpp
 
     src/platform/vma_impl.cpp
 )

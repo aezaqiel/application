@@ -6,7 +6,9 @@
 #include "rhi/context.hpp"
 #include "rhi/device.hpp"
 #include "rhi/swapchain.hpp"
+#include "rhi/queue.hpp"
 #include "rhi/command.hpp"
+#include "rhi/semaphores.hpp"
 
 namespace application {
 
@@ -27,6 +29,7 @@ namespace application {
     private:
         struct FrameData
         {
+            u64 fence { 0 };
             std::unique_ptr<CommandPool> command_pool;
         };
 
@@ -39,7 +42,14 @@ namespace application {
 
         std::unique_ptr<Swapchain> m_swapchain;
 
+        std::unique_ptr<Queue> m_graphics_queue;
+        std::unique_ptr<Queue> m_compute_queue;
+        std::unique_ptr<Queue> m_transfer_queue;
+
         PerFrame<FrameData> m_frames;
+
+        std::unique_ptr<TimelineSemaphore> m_timeline;
+        u64 m_frame_index { 0 };
     };
 
 }
