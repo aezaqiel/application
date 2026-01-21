@@ -11,8 +11,8 @@
 #include "rhi/queue.hpp"
 #include "rhi/command.hpp"
 #include "rhi/semaphores.hpp"
-
 #include "rhi/image.hpp"
+#include "rhi/descriptor.hpp"
 
 namespace application {
 
@@ -54,12 +54,16 @@ namespace application {
         std::unique_ptr<Queue> m_compute_queue;
         std::unique_ptr<Queue> m_transfer_queue;
 
+        std::unique_ptr<DescriptorAllocator> m_descriptor_allocator;
+
         PerFrame<FrameData> m_frames;
 
         std::unique_ptr<TimelineSemaphore> m_timeline;
         u64 m_frame_index { 0 };
 
-        std::unique_ptr<Image> m_image;
+        std::unique_ptr<Image> m_draw_image;
+        std::unique_ptr<DescriptorLayout> m_draw_layout;
+        VkDescriptorSet m_draw_set;
     };
 
 }

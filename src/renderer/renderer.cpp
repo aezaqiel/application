@@ -16,9 +16,18 @@ namespace application {
         m_swapchain = std::make_unique<Swapchain>(m_context.get(), m_device.get());
         m_swapchain->create(VkExtent2D { m_width, m_height });
 
+        dispatcher.subscribe<WindowResizedEvent>([this](const WindowResizedEvent& e) -> bool {
+            m_width = e.width;
+            m_height = e.height;
+
+            return false;
+        });
+
         m_graphics_queue = std::make_unique<Queue>(m_device.get(), m_device->graphics_family());
         m_compute_queue = std::make_unique<Queue>(m_device.get(), m_device->compute_family());
         m_transfer_queue = std::make_unique<Queue>(m_device.get(), m_device->transfer_family());
+
+        m_descriptor_allocator = std::make_unique<DescriptorAllocator>(m_device.get());
 
         for (auto& frame : m_frames) {
             frame.command_pool = std::make_unique<CommandPool>(m_device.get(), m_device->graphics_family());
@@ -26,7 +35,7 @@ namespace application {
 
         m_timeline = std::make_unique<TimelineSemaphore>(m_device.get());
 
-        m_image = std::make_unique<Image>(m_device.get(), Image::Info {
+        m_draw_image = std::make_unique<Image>(m_device.get(), Image::Info {
             .extent = { m_width, m_height, 1 },
             .format = VK_FORMAT_R16G16B16A16_SFLOAT,
             .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -34,12 +43,11 @@ namespace application {
             .memory = VMA_MEMORY_USAGE_GPU_ONLY
         });
 
-        dispatcher.subscribe<WindowResizedEvent>([this](const WindowResizedEvent& e) -> bool {
-            m_width = e.width;
-            m_height = e.height;
+        m_draw_layout = DescriptorLayout::Builder(m_device.get())
+            .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
+            .build();
 
-            return false;
-        });
+        m_draw_set = m_descriptor_allocator->allocate(*m_draw_layout);
     }
 
     Renderer::~Renderer()
@@ -67,8 +75,12 @@ namespace application {
 
         cmd.begin();
 
+        DescriptorWriter(m_device.get())
+            .write_image(0, *m_draw_image, VK_NULL_HANDLE)
+            .update(m_draw_set);
+
         auto barrier = BarrierBatch()
-            .image(m_image->image(),
+            .image(m_draw_image->image(),
                 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
                 VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL
@@ -93,7 +105,7 @@ namespace application {
             }
         };
 
-        cmd.clear_image(m_image->image(), VK_IMAGE_LAYOUT_GENERAL, clear_color, clear_ranges);
+        cmd.clear_image(m_draw_image->image(), VK_IMAGE_LAYOUT_GENERAL, clear_color, clear_ranges);
 
         barrier = BarrierBatch()
             .image(m_swapchain->current_image(),
@@ -101,7 +113,7 @@ namespace application {
                 VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             )
-            .image(m_image->image(),
+            .image(m_draw_image->image(),
                 VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
                 VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
@@ -109,7 +121,7 @@ namespace application {
 
         cmd.barrier(barrier);
 
-        cmd.copy_image(m_image->image(), m_image->extent(), m_swapchain->current_image(), { m_swapchain->width(), m_swapchain->height(), 1 });
+        cmd.copy_image(m_draw_image->image(), m_draw_image->extent(), m_swapchain->current_image(), { m_swapchain->width(), m_swapchain->height(), 1 });
 
         barrier = BarrierBatch()
             .image(m_swapchain->current_image(),
