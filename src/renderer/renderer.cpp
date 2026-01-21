@@ -37,6 +37,7 @@ namespace application {
     Renderer::~Renderer()
     {
         m_device->wait_idle();
+        m_gc.flush();
     }
 
     void Renderer::draw()
@@ -45,6 +46,7 @@ namespace application {
 
         m_timeline->sync(frame.fence);
 
+        frame.gc.flush();
         m_swapchain->cleanup();
 
         if (!m_swapchain->acquire()) {

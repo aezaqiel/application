@@ -3,6 +3,8 @@
 #include "core/window.hpp"
 #include "core/events.hpp"
 
+#include "deletion_queue.hpp"
+
 #include "rhi/context.hpp"
 #include "rhi/device.hpp"
 #include "rhi/swapchain.hpp"
@@ -31,11 +33,15 @@ namespace application {
         {
             u64 fence { 0 };
             std::unique_ptr<CommandPool> command_pool;
+
+            DeletionQueue gc;
         };
 
     private:
         u32 m_width { 0 };
         u32 m_height { 0 };
+
+        DeletionQueue m_gc;
 
         std::unique_ptr<Context> m_context;
         std::unique_ptr<Device> m_device;
