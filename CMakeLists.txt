@@ -23,6 +23,10 @@ add_subdirectory(thirdparty/volk)
 add_subdirectory(thirdparty/vma)
 add_subdirectory(thirdparty/glm)
 
+set(SHADER_SOURCES
+    "gradient.slang"
+)
+
 add_executable(${PROJECT_NAME}
     src/main.cpp
 
@@ -58,6 +62,8 @@ add_executable(${PROJECT_NAME}
     src/renderer/rhi/barrier.cpp
     src/renderer/rhi/image.hpp
     src/renderer/rhi/image.cpp
+    src/renderer/rhi/buffer.hpp
+    src/renderer/rhi/buffer.cpp
 
     src/platform/vma_impl.cpp
 )
@@ -169,6 +175,8 @@ function(target_add_slang_shader target_name)
     target_sources(${target_name} PRIVATE ${SHADER_OUTPUT})
 endfunction()
 
-target_add_slang_shader(${PROJECT_NAME} 
-    FILE "gradient.slang"
-)
+foreach(SRC ${SHADER_SOURCES})
+    target_add_slang_shader(${PROJECT_NAME} 
+        FILE ${SRC}
+    )
+endforeach()

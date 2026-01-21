@@ -24,32 +24,32 @@ namespace application {
         m_memory.clear();
     }
 
-    // BarrierBatch& BarrierBatch::buffer(
-    //     const Buffer& buffer,
-    //     VkPipelineStageFlags2 src_stage,
-    //     VkAccessFlags2 src_access,
-    //     VkPipelineStageFlags2 dst_stage,
-    //     VkAccessFlags2 dst_access,
-    //     u32 src_queue,
-    //     u32 dst_queue
-    // )
-    // {
-    //     m_buffers.push_back(VkBufferMemoryBarrier2 {
-    //         .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-    //         .pNext = nullptr,
-    //         .srcStageMask = src_stage,
-    //         .srcAccessMask = src_access,
-    //         .dstStageMask = dst_stage,
-    //         .dstAccessMask = dst_access,
-    //         .srcQueueFamilyIndex = src_queue,
-    //         .dstQueueFamilyIndex = dst_queue,
-    //         .buffer = buffer.buffer(),
-    //         .offset = 0,
-    //         .size = buffer.size()
-    //     });
+    BarrierBatch& BarrierBatch::buffer(
+        const Buffer& buffer,
+        VkPipelineStageFlags2 src_stage,
+        VkAccessFlags2 src_access,
+        VkPipelineStageFlags2 dst_stage,
+        VkAccessFlags2 dst_access,
+        u32 src_queue,
+        u32 dst_queue
+    )
+    {
+        m_buffers.push_back(VkBufferMemoryBarrier2 {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .pNext = nullptr,
+            .srcStageMask = src_stage,
+            .srcAccessMask = src_access,
+            .dstStageMask = dst_stage,
+            .dstAccessMask = dst_access,
+            .srcQueueFamilyIndex = src_queue,
+            .dstQueueFamilyIndex = dst_queue,
+            .buffer = buffer.buffer(),
+            .offset = 0,
+            .size = buffer.size()
+        });
 
-    //     return *this;
-    // }
+        return *this;
+    }
 
     BarrierBatch& BarrierBatch::buffer(
         VkBuffer buffer, VkDeviceSize size,

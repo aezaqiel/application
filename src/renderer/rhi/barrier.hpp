@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vktypes.hpp"
+#include "buffer.hpp"
 #include "image.hpp"
 
 namespace application {
@@ -14,15 +15,15 @@ namespace application {
         VkDependencyInfo dependency() const;
         void clear();
 
-        // BarrierBatch& buffer(
-        //     const Buffer& buffer,
-        //     VkPipelineStageFlags2 src_stage,
-        //     VkAccessFlags2 src_access,
-        //     VkPipelineStageFlags2 dst_stage,
-        //     VkAccessFlags2 dst_access,
-        //     u32 src_queue = VK_QUEUE_FAMILY_IGNORED,
-        //     u32 dst_queue = VK_QUEUE_FAMILY_IGNORED
-        // );
+        BarrierBatch& buffer(
+            const Buffer& buffer,
+            VkPipelineStageFlags2 src_stage,
+            VkAccessFlags2 src_access,
+            VkPipelineStageFlags2 dst_stage,
+            VkAccessFlags2 dst_access,
+            u32 src_queue = VK_QUEUE_FAMILY_IGNORED,
+            u32 dst_queue = VK_QUEUE_FAMILY_IGNORED
+        );
 
         BarrierBatch& buffer(
             VkBuffer buffer, VkDeviceSize size,
