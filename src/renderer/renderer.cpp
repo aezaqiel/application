@@ -54,7 +54,7 @@ namespace application {
 
         std::vector<VkPushConstantRange> draw_constants;
 
-        m_draw_pipeline = std::make_unique<ComputePipeline>(m_device.get(), "gradient.spv", draw_layouts, draw_constants);
+        m_draw_pipeline = std::make_unique<ComputePipeline>(m_device.get(), draw_layouts, draw_constants, "gradient.spv");
     }
 
     Renderer::~Renderer()

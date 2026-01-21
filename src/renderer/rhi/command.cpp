@@ -111,14 +111,56 @@ namespace application {
         vkCmdBindPipeline(m_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
     }
 
+    void CommandList::bind_pipeline(const GraphicsPipeline& pipeline)
+    {
+        vkCmdBindPipeline(m_cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+    }
+
     void CommandList::bind_set(const ComputePipeline& pipeline, std::span<VkDescriptorSet> sets, u32 first)
     {
         vkCmdBindDescriptorSets(m_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), first, static_cast<u32>(sets.size()), sets.data(), 0, nullptr);
     }
 
+    void CommandList::bind_set(const GraphicsPipeline& pipeline, std::span<VkDescriptorSet> sets, u32 first)
+    {
+        vkCmdBindDescriptorSets(m_cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), first, static_cast<u32>(sets.size()), sets.data(), 0, nullptr);
+    }
+
     void CommandList::dispatch(u32 x, u32 y, u32 z)
     {
         vkCmdDispatch(m_cmd, x, y, z);
+    }
+
+    void CommandList::begin_render(const VkRenderingInfo& info)
+    {
+        vkCmdBeginRendering(m_cmd, &info);
+    }
+
+    void CommandList::end_render()
+    {
+        vkCmdEndRendering(m_cmd);
+    }
+
+    void CommandList::set_viewport(f32 x, f32 y, f32 width, f32 height, f32 min_depth, f32 max_depth)
+    {
+        VkViewport viewport { x, y, width, height, min_depth, max_depth };
+        vkCmdSetViewport(m_cmd, 0, 1, &viewport);
+    }
+
+    void CommandList::set_scissor(i32 x, i32 y, u32 width, u32 height)
+    {
+        VkRect2D scissor { { x, y, }, { width, height } };
+        vkCmdSetScissor(m_cmd, 0, 1, &scissor);
+    }
+
+    void CommandList::draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
+    {
+        vkCmdDraw(m_cmd, vertex_count, instance_count, first_vertex, first_instance);
+    }
+
+    void CommandList::draw_indexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance)
+    {
+        vkCmdDrawIndexed(m_cmd, index_count, instance_count, first_index, vertex_offset, first_instance);
     }
 
     CommandPool::CommandPool(const Device* device, u32 queue_family)
