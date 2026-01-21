@@ -14,7 +14,7 @@ namespace application {
         m_device = std::make_unique<Device>(*m_context);
 
         m_swapchain = std::make_unique<Swapchain>(*m_context, *m_device);
-        m_swapchain->create(VkExtent2D { m_width, m_height }, 0);
+        m_swapchain->create(VkExtent2D { m_width, m_height });
 
         m_graphics_queue = std::make_unique<Queue>(*m_device, m_device->graphics_family());
         m_compute_queue = std::make_unique<Queue>(*m_device, m_device->compute_family());
@@ -45,8 +45,10 @@ namespace application {
 
         m_timeline->sync(frame.fence);
 
+        m_swapchain->cleanup();
+
         if (!m_swapchain->acquire()) {
-            m_swapchain->create(VkExtent2D { m_width, m_height }, m_frame_index);
+            m_swapchain->create(VkExtent2D { m_width, m_height });
             return;
         }
 
@@ -65,9 +67,9 @@ namespace application {
         cmd.barrier(barrier);
 
         VkClearColorValue clear_color = {{
-            std::abs(std::tan(m_frame_index / 120.0f)),
             std::abs(std::cos(m_frame_index / 120.0f)),
             std::abs(std::sin(m_frame_index / 120.0f)),
+            std::abs(std::tan(m_frame_index / 120.0f)),
             1.0f
         }};
 
@@ -110,7 +112,7 @@ namespace application {
         frame.fence = ++m_frame_index;
 
         if (!m_swapchain->present(m_graphics_queue->queue())) {
-            m_swapchain->create(VkExtent2D { m_width, m_height }, m_frame_index);
+            m_swapchain->create(VkExtent2D { m_width, m_height });
         }
     }
 

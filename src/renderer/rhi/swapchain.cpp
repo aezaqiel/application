@@ -9,7 +9,8 @@ namespace application {
 
     Swapchain::~Swapchain()
     {
-        cleanup(std::numeric_limits<u64>::max());
+        m_frame_index = std::numeric_limits<u64>::max();
+        cleanup();
 
         for (usize i = 0; i < m_images.size(); ++i) {
             vkDestroyImageView(m_device.device(), m_views[i], nullptr);
@@ -20,7 +21,7 @@ namespace application {
         vkDestroySwapchainKHR(m_device.device(), m_swapchain, nullptr);
     }
 
-    void Swapchain::create(VkExtent2D extent, u64 frame)
+    void Swapchain::create(VkExtent2D extent)
     {
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device.physical(), m_context.surface(), &m_capabilities);
 
@@ -90,7 +91,7 @@ namespace application {
         VK_CHECK(vkCreateSwapchainKHR(m_device.device(), &swapchain_info, nullptr, &m_swapchain));
 
         if (old != VK_NULL_HANDLE) {
-            u64 fence = m_views.size() + frame;
+            u64 fence = m_frame_index + static_cast<u64>(m_views.size());
 
             m_retired.emplace(m_retired.begin(), RetiredResources {
                 .views = std::move(m_views),
@@ -156,7 +157,7 @@ namespace application {
 
     bool Swapchain::acquire()
     {
-        VkResult result = vkAcquireNextImageKHR(m_device.device(), m_swapchain, std::numeric_limits<u64>::max(), m_image_acquired_semaphores[m_sync_index], VK_NULL_HANDLE, &m_image_index);
+        VkResult result = vkAcquireNextImageKHR(m_device.device(), m_swapchain, std::numeric_limits<u64>::max(), m_image_acquired_semaphores[m_frame_index % m_image_count], VK_NULL_HANDLE, &m_image_index);
 
         if (result == VK_SUCCESS) return true;
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) return false;
@@ -180,7 +181,8 @@ namespace application {
 
         VkResult result = vkQueuePresentKHR(queue, &present_info);
 
-        m_sync_index = (m_sync_index + 1) % m_image_count;
+        // m_sync_index = (m_sync_index + 1) % m_image_count;
+        m_frame_index++;
 
         if (result == VK_SUCCESS) return true;
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) return false;
@@ -194,7 +196,7 @@ namespace application {
         return VkSemaphoreSubmitInfo {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .pNext = nullptr,
-            .semaphore = m_image_acquired_semaphores[m_sync_index],
+            .semaphore = m_image_acquired_semaphores[m_frame_index % m_image_count],
             .value = 0,
             .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             .deviceIndex = 0
@@ -213,12 +215,12 @@ namespace application {
         };
     }
 
-    void Swapchain::cleanup(u64 frame)
+    void Swapchain::cleanup()
     {
         while (!m_retired.empty()) {
             const auto& retired = m_retired.back();
 
-            if (frame < retired.fence) break;
+            if (m_frame_index <= retired.fence) break;
 
             for (usize i = 0; i < retired.views.size(); ++i) {
                 vkDestroyImageView(m_device.device(), retired.views[i], nullptr);
