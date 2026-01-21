@@ -30,6 +30,9 @@ namespace application {
         const std::vector<VkImage>& images() const { return m_images; }
         const std::vector<VkImageView>& views() const { return m_views; }
 
+        VkImage current_image() const { return m_images[m_image_index]; }
+        VkImageView current_view() const { return m_views[m_image_index]; }
+
         void create(VkExtent2D extent);
 
         bool acquire();

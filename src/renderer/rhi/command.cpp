@@ -38,6 +38,8 @@ namespace application {
     {
         auto dependency = barrier.dependency();
         vkCmdPipelineBarrier2(m_cmd, &dependency);
+
+        barrier.clear();
     }
 
     CommandPool::CommandPool(const Device& device, u32 queue_family)

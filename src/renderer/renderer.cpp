@@ -56,10 +56,36 @@ namespace application {
         cmd.begin();
 
         auto barrier = BarrierBatch()
-            .image(m_swapchain->images()[m_swapchain->image_index()],
-                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_NONE,
+            .image(m_swapchain->current_image(),
+                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            );
+
+        cmd.barrier(barrier);
+
+        VkClearColorValue clear_color = {{
+            std::abs(std::tan(m_frame_index / 120.0f)),
+            std::abs(std::cos(m_frame_index / 120.0f)),
+            std::abs(std::sin(m_frame_index / 120.0f)),
+            1.0f
+        }};
+
+        VkImageSubresourceRange clear_range {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = VK_REMAINING_MIP_LEVELS,
+            .baseArrayLayer = 0,
+            .layerCount = VK_REMAINING_ARRAY_LAYERS
+        };
+
+        vkCmdClearColorImage(cmd.cmd(), m_swapchain->current_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &clear_range);
+
+        barrier = BarrierBatch()
+            .image(m_swapchain->current_image(),
+                VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_NONE,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
             );
 
         cmd.barrier(barrier);
