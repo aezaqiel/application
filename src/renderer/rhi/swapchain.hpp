@@ -33,13 +33,27 @@ namespace application {
         VkImage current_image() const { return m_images[m_image_index]; }
         VkImageView current_view() const { return m_views[m_image_index]; }
 
-        void create(VkExtent2D extent);
+        void create(VkExtent2D extent, u64 frame);
 
         bool acquire();
         bool present(VkQueue queue);
 
         VkSemaphoreSubmitInfo acquire_wait_info();
         VkSemaphoreSubmitInfo present_signal_info();
+
+        void cleanup(u64 frame);
+
+    private:
+        struct RetiredResources
+        {
+            std::vector<VkImageView> views;
+            std::vector<VkSemaphore> acquire_semaphores;
+            std::vector<VkSemaphore> present_semaphores;
+
+            VkSwapchainKHR swapchain;
+
+            u64 fence;
+        };
 
     private:
         const Context& m_context;
@@ -61,6 +75,8 @@ namespace application {
 
         u32 m_image_index { 0 };
         u32 m_sync_index { 0 };
+
+        std::vector<RetiredResources> m_retired;
     };
 
 }

@@ -9,6 +9,8 @@ namespace application {
 
     Swapchain::~Swapchain()
     {
+        cleanup(std::numeric_limits<u64>::max());
+
         for (usize i = 0; i < m_images.size(); ++i) {
             vkDestroyImageView(m_device.device(), m_views[i], nullptr);
             vkDestroySemaphore(m_device.device(), m_image_acquired_semaphores[i], nullptr);
@@ -18,7 +20,7 @@ namespace application {
         vkDestroySwapchainKHR(m_device.device(), m_swapchain, nullptr);
     }
 
-    void Swapchain::create(VkExtent2D extent)
+    void Swapchain::create(VkExtent2D extent, u64 frame)
     {
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device.physical(), m_context.surface(), &m_capabilities);
 
@@ -88,21 +90,21 @@ namespace application {
         VK_CHECK(vkCreateSwapchainKHR(m_device.device(), &swapchain_info, nullptr, &m_swapchain));
 
         if (old != VK_NULL_HANDLE) {
-            m_device.wait_idle();
+            u64 fence = m_views.size() + frame;
 
-            for (usize i = 0; i < m_images.size(); ++i) {
-                vkDestroyImageView(m_device.device(), m_views[i], nullptr);
-                vkDestroySemaphore(m_device.device(), m_image_acquired_semaphores[i], nullptr);
-                vkDestroySemaphore(m_device.device(), m_present_signal_semaphores[i], nullptr);
-            }
+            m_retired.emplace(m_retired.begin(), RetiredResources {
+                .views = std::move(m_views),
+                .acquire_semaphores = std::move(m_image_acquired_semaphores),
+                .present_semaphores = std::move(m_present_signal_semaphores),
+                .swapchain = old,
+                .fence = fence
+            });
 
-            vkDestroySwapchainKHR(m_device.device(), old, nullptr);
+            m_views.clear();
+            m_image_acquired_semaphores.clear();
+            m_present_signal_semaphores.clear();
+            m_images.clear();
         }
-
-        m_present_signal_semaphores.clear();
-        m_image_acquired_semaphores.clear();
-        m_views.clear();
-        m_images.clear();
 
         VK_CHECK(vkGetSwapchainImagesKHR(m_device.device(), m_swapchain, &m_image_count, nullptr));
 
@@ -209,6 +211,25 @@ namespace application {
             .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             .deviceIndex = 0
         };
+    }
+
+    void Swapchain::cleanup(u64 frame)
+    {
+        while (!m_retired.empty()) {
+            const auto& retired = m_retired.back();
+
+            if (frame < retired.fence) break;
+
+            for (usize i = 0; i < retired.views.size(); ++i) {
+                vkDestroyImageView(m_device.device(), retired.views[i], nullptr);
+                vkDestroySemaphore(m_device.device(), retired.acquire_semaphores[i], nullptr);
+                vkDestroySemaphore(m_device.device(), retired.present_semaphores[i], nullptr);
+            }
+
+            vkDestroySwapchainKHR(m_device.device(), retired.swapchain, nullptr);
+
+            m_retired.pop_back();
+        }
     }
 
 }

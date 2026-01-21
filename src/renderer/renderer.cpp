@@ -14,7 +14,7 @@ namespace application {
         m_device = std::make_unique<Device>(*m_context);
 
         m_swapchain = std::make_unique<Swapchain>(*m_context, *m_device);
-        m_swapchain->create(VkExtent2D { m_width, m_height });
+        m_swapchain->create(VkExtent2D { m_width, m_height }, 0);
 
         m_graphics_queue = std::make_unique<Queue>(*m_device, m_device->graphics_family());
         m_compute_queue = std::make_unique<Queue>(*m_device, m_device->compute_family());
@@ -46,7 +46,7 @@ namespace application {
         m_timeline->sync(frame.fence);
 
         if (!m_swapchain->acquire()) {
-            m_swapchain->create(VkExtent2D { m_width, m_height });
+            m_swapchain->create(VkExtent2D { m_width, m_height }, m_frame_index);
             return;
         }
 
@@ -110,7 +110,7 @@ namespace application {
         frame.fence = ++m_frame_index;
 
         if (!m_swapchain->present(m_graphics_queue->queue())) {
-            m_swapchain->create(VkExtent2D { m_width, m_height });
+            m_swapchain->create(VkExtent2D { m_width, m_height }, m_frame_index);
         }
     }
 
