@@ -42,6 +42,61 @@ namespace application {
         barrier.clear();
     }
 
+    void CommandList::clear_image(VkImage image, VkImageLayout layout, VkClearColorValue color, const std::vector<VkImageSubresourceRange>& ranges)
+    {
+        vkCmdClearColorImage(m_cmd, image, layout, &color, static_cast<u32>(ranges.size()), ranges.data());
+    }
+
+    void CommandList::copy_image(VkImage src, VkExtent3D src_extent, VkImage dst, VkExtent3D dst_extent)
+    {
+        VkImageBlit2 region {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+            .pNext = nullptr,
+            .srcSubresource = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            },
+            .srcOffsets = {
+                { 0, 0, 0 },
+                {
+                    static_cast<i32>(src_extent.width),
+                    static_cast<i32>(src_extent.height),
+                    static_cast<i32>(src_extent.depth)
+                }
+            },
+            .dstSubresource = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            },
+            .dstOffsets = {
+                { 0, 0, 0 },
+                {
+                    static_cast<i32>(dst_extent.width),
+                    static_cast<i32>(dst_extent.height),
+                    static_cast<i32>(dst_extent.depth)
+                }
+            }
+        };
+
+        VkBlitImageInfo2 blit_info {
+            .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+            .pNext = nullptr,
+            .srcImage = src,
+            .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .dstImage = dst,
+            .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .regionCount = 1,
+            .pRegions = &region,
+            .filter = VK_FILTER_LINEAR
+        };
+
+        vkCmdBlitImage2(m_cmd, &blit_info);
+    }
+
     CommandPool::CommandPool(const Device& device, u32 queue_family)
         : m_device(device)
     {

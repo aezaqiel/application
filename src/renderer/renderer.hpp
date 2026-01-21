@@ -12,6 +12,8 @@
 #include "rhi/command.hpp"
 #include "rhi/semaphores.hpp"
 
+#include "rhi/image.hpp"
+
 namespace application {
 
     class Renderer
@@ -56,6 +58,8 @@ namespace application {
 
         std::unique_ptr<TimelineSemaphore> m_timeline;
         u64 m_frame_index { 0 };
+
+        std::unique_ptr<Image> m_image;
     };
 
 }

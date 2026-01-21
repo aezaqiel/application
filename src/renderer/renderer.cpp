@@ -26,6 +26,14 @@ namespace application {
 
         m_timeline = std::make_unique<TimelineSemaphore>(*m_device);
 
+        m_image = std::make_unique<Image>(*m_device, Image::Info {
+            .extent = { m_width, m_height, 1 },
+            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+            .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .memory = VMA_MEMORY_USAGE_GPU_ONLY
+        });
+
         dispatcher.subscribe<WindowResizedEvent>([this](const WindowResizedEvent& e) -> bool {
             m_width = e.width;
             m_height = e.height;
@@ -60,10 +68,10 @@ namespace application {
         cmd.begin();
 
         auto barrier = BarrierBatch()
-            .image(m_swapchain->current_image(),
+            .image(m_image->image(),
                 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
                 VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL
             );
 
         cmd.barrier(barrier);
@@ -75,20 +83,38 @@ namespace application {
             1.0f
         }};
 
-        VkImageSubresourceRange clear_range {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = VK_REMAINING_MIP_LEVELS,
-            .baseArrayLayer = 0,
-            .layerCount = VK_REMAINING_ARRAY_LAYERS
+        std::vector<VkImageSubresourceRange> clear_ranges {
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS
+            }
         };
 
-        vkCmdClearColorImage(cmd.cmd(), m_swapchain->current_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &clear_range);
+        cmd.clear_image(m_image->image(), VK_IMAGE_LAYOUT_GENERAL, clear_color, clear_ranges);
 
         barrier = BarrierBatch()
             .image(m_swapchain->current_image(),
+                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            )
+            .image(m_image->image(),
                 VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
+                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+            );
+
+        cmd.barrier(barrier);
+
+        cmd.copy_image(m_image->image(), m_image->extent(), m_swapchain->current_image(), { m_swapchain->width(), m_swapchain->height(), 1 });
+
+        barrier = BarrierBatch()
+            .image(m_swapchain->current_image(),
+                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_NONE,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
             );
 

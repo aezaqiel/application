@@ -23,6 +23,8 @@ namespace application {
         VkCommandBufferSubmitInfo submit_info() const;
 
         void barrier(BarrierBatch& barrier) const;
+        void clear_image(VkImage image, VkImageLayout layout, VkClearColorValue color, const std::vector<VkImageSubresourceRange>& ranges);
+        void copy_image(VkImage src, VkExtent3D src_extent, VkImage dst, VkExtent3D dst_extent);
 
     private:
         VkCommandBuffer m_cmd { VK_NULL_HANDLE };

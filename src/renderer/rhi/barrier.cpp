@@ -78,42 +78,42 @@ namespace application {
         return *this;
     }
 
-    // BarrierBatch& BarrierBatch::image(
-    //     const Image& image,
-    //     VkPipelineStageFlags2 src_stage,
-    //     VkAccessFlags2 src_access,
-    //     VkPipelineStageFlags2 dst_stage,
-    //     VkAccessFlags2 dst_access,
-    //     VkImageLayout old_layout,
-    //     VkImageLayout new_layout,
-    //     VkImageAspectFlags aspect,
-    //     u32 src_queue,
-    //     u32 dst_queue
-    // )
-    // {
-    //     m_images.push_back(VkImageMemoryBarrier2 {
-    //         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-    //         .pNext = nullptr,
-    //         .srcStageMask = src_stage,
-    //         .srcAccessMask = src_access,
-    //         .dstStageMask = dst_stage,
-    //         .dstAccessMask = dst_access,
-    //         .oldLayout = old_layout,
-    //         .newLayout = new_layout,
-    //         .srcQueueFamilyIndex = src_queue,
-    //         .dstQueueFamilyIndex = dst_queue,
-    //         .image = image.image(),
-    //         .subresourceRange = {
-    //             .aspectMask = aspect,
-    //             .baseMipLevel = 0,
-    //             .levelCount = image.mip_count(),
-    //             .baseArrayLayer = 0,
-    //             .layerCount = image.layer_count()
-    //         }
-    //     });
+    BarrierBatch& BarrierBatch::image(
+        const Image& image,
+        VkPipelineStageFlags2 src_stage,
+        VkAccessFlags2 src_access,
+        VkPipelineStageFlags2 dst_stage,
+        VkAccessFlags2 dst_access,
+        VkImageLayout old_layout,
+        VkImageLayout new_layout,
+        VkImageAspectFlags aspect,
+        u32 src_queue,
+        u32 dst_queue
+    )
+    {
+        m_images.push_back(VkImageMemoryBarrier2 {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext = nullptr,
+            .srcStageMask = src_stage,
+            .srcAccessMask = src_access,
+            .dstStageMask = dst_stage,
+            .dstAccessMask = dst_access,
+            .oldLayout = old_layout,
+            .newLayout = new_layout,
+            .srcQueueFamilyIndex = src_queue,
+            .dstQueueFamilyIndex = dst_queue,
+            .image = image.image(),
+            .subresourceRange = {
+                .aspectMask = aspect,
+                .baseMipLevel = 0,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS
+            }
+        });
 
-    //     return *this;
-    // }
+        return *this;
+    }
 
     BarrierBatch& BarrierBatch::image(
         VkImage image,
