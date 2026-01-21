@@ -151,7 +151,8 @@ namespace application {
 
         VkPhysicalDeviceVulkan11Features features11 {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
-            .pNext = &features12
+            .pNext = &features12,
+            .shaderDrawParameters = VK_TRUE
         };
 
         VkPhysicalDeviceFeatures2 features {

@@ -26,6 +26,8 @@ add_subdirectory(thirdparty/glm)
 set(SHADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 set(SHADER_SOURCES
     "gradient.slang"
+    "vertex.slang"
+    "fragment.slang"
 )
 
 add_executable(${PROJECT_NAME}

@@ -42,7 +42,7 @@ namespace application {
             std::unique_ptr<CommandPool> command_pool;
 
             std::unique_ptr<DescriptorAllocator> descriptor_allocator;
-            VkDescriptorSet draw_descriptor;
+            VkDescriptorSet compute_descriptor;
         };
 
     private:
@@ -65,10 +65,13 @@ namespace application {
         std::unique_ptr<TimelineSemaphore> m_timeline;
         u64 m_frame_index { 0 };
 
-        std::unique_ptr<Image> m_draw_image;
+        std::unique_ptr<Image> m_storage_image;
 
-        std::unique_ptr<DescriptorLayout> m_draw_layout;
-        std::unique_ptr<ComputePipeline> m_draw_pipeline;
+        std::unique_ptr<DescriptorLayout> m_compute_layout;
+        std::unique_ptr<ComputePipeline> m_compute_pipeline;
+
+        std::unique_ptr<DescriptorLayout> m_triangle_layout;
+        std::unique_ptr<GraphicsPipeline> m_triangle_pipeline;
     };
 
 }

@@ -36,7 +36,7 @@ namespace application {
 
         m_timeline = std::make_unique<TimelineSemaphore>(m_device.get());
 
-        m_draw_image = std::make_unique<Image>(m_device.get(), Image::Info {
+        m_storage_image = std::make_unique<Image>(m_device.get(), Image::Info {
             .extent = { m_width, m_height, 1 },
             .format = VK_FORMAT_R16G16B16A16_SFLOAT,
             .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -44,17 +44,30 @@ namespace application {
             .memory = VMA_MEMORY_USAGE_GPU_ONLY
         });
 
-        m_draw_layout = DescriptorLayout::Builder(m_device.get())
+        m_compute_layout = DescriptorLayout::Builder(m_device.get())
             .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT)
             .build();
 
-        std::vector<VkDescriptorSetLayout> draw_layouts {
-            m_draw_layout->layout()
+        std::vector<VkDescriptorSetLayout> compute_layouts {
+            m_compute_layout->layout()
         };
 
-        std::vector<VkPushConstantRange> draw_constants;
+        m_compute_pipeline = std::make_unique<ComputePipeline>(m_device.get(), compute_layouts, std::span<VkPushConstantRange>{}, "gradient.spv");
 
-        m_draw_pipeline = std::make_unique<ComputePipeline>(m_device.get(), draw_layouts, draw_constants, "gradient.spv");
+        m_triangle_layout = DescriptorLayout::Builder(m_device.get()).build();
+
+        std::vector<VkDescriptorSetLayout> triangle_layouts {
+            m_triangle_layout->layout()
+        };
+
+        m_triangle_pipeline = std::make_unique<GraphicsPipeline>(m_device.get(), triangle_layouts, std::span<VkPushConstantRange>{}, GraphicsPipeline::Info {
+            .vertex_name = "vertex.spv",
+            .fragment_name = "fragment.spv",
+            .color_formats = { m_storage_image->format() },
+            .front_face = VK_FRONT_FACE_CLOCKWISE,
+            .depth_test = false,
+            .depth_write = false,
+        });
     }
 
     Renderer::~Renderer()
@@ -101,7 +114,7 @@ namespace application {
         // --- COMPUTE DRAW ---
 
         auto barrier = BarrierBatch()
-            .image(m_draw_image->image(),
+            .image(m_storage_image->image(),
                 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL
@@ -109,17 +122,72 @@ namespace application {
 
         cmd.barrier(barrier);
 
-        frame.draw_descriptor = frame.descriptor_allocator->allocate(*m_draw_layout);
+        frame.compute_descriptor = frame.descriptor_allocator->allocate(*m_compute_layout);
 
         DescriptorWriter(m_device.get())
-            .write_storage_image(0, *m_draw_image, VK_IMAGE_LAYOUT_GENERAL)
-            .update(frame.draw_descriptor);
+            .write_storage_image(0, *m_storage_image, VK_IMAGE_LAYOUT_GENERAL)
+            .update(frame.compute_descriptor);
 
-        std::array<VkDescriptorSet, 1> draw_sets { frame.draw_descriptor };
+        std::array<VkDescriptorSet, 1> compute_sets { frame.compute_descriptor };
         
-        cmd.bind_pipeline(*m_draw_pipeline);
-        cmd.bind_set(*m_draw_pipeline, draw_sets, 0);
-        cmd.dispatch(std::ceil(m_width / 16.0f), std::ceil(m_height / 16.0f), 1);
+        cmd.bind_pipeline(*m_compute_pipeline);
+        cmd.bind_set(*m_compute_pipeline, compute_sets, 0);
+        cmd.dispatch(std::ceil(m_storage_image->width() / 16.0f), std::ceil(m_storage_image->height() / 16.0f), 1);
+
+        // --- GRAPHICS DRAW ---
+
+        barrier = BarrierBatch()
+            .image(m_storage_image->image(),
+                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
+                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            );
+
+        cmd.barrier(barrier);
+
+        std::array<VkRenderingAttachmentInfo, 1> render_attachments {
+            VkRenderingAttachmentInfo {
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .pNext = nullptr,
+                .imageView = m_storage_image->view(),
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .resolveImageView = VK_NULL_HANDLE,
+                .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = {
+                    .color = { 0.0f, 0.0f, 0.0f, 1.0f }
+                }
+            }
+        };
+
+        VkRenderingInfo render_info {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .renderArea = {
+                .offset = { 0, 0 },
+                .extent = { m_storage_image->width(), m_storage_image->height() }
+            },
+            .layerCount = 1,
+            .viewMask = 0,
+            .colorAttachmentCount = static_cast<u32>(render_attachments.size()),
+            .pColorAttachments = render_attachments.data(),
+            .pDepthAttachment = nullptr,
+            .pStencilAttachment = nullptr
+        };
+
+        cmd.begin_render(render_info);
+
+        cmd.bind_pipeline(*m_triangle_pipeline);
+
+        cmd.set_viewport(0.0f, 0.0f, static_cast<f32>(m_storage_image->width()), static_cast<f32>(m_storage_image->height()), 0.0f, 1.0f);
+        cmd.set_scissor(0, 0, m_storage_image->width(), m_storage_image->height());
+
+        cmd.draw(3, 1, 0, 0);
+
+        cmd.end_render();
 
         // --- BLIT TO SWAPCHAIN ---
 
@@ -129,22 +197,22 @@ namespace application {
                 VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             )
-            .image(m_draw_image->image(),
-                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+            .image(m_storage_image->image(),
+                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
-                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
             );
 
         cmd.barrier(barrier);
 
-        cmd.copy_image(m_draw_image->image(), m_draw_image->extent(), m_swapchain->current_image(), { m_swapchain->width(), m_swapchain->height(), 1 });
+        cmd.copy_image(m_storage_image->image(), m_storage_image->extent(), m_swapchain->current_image(), { m_swapchain->width(), m_swapchain->height(), 1 });
 
         // --- PRESENT ---
 
         barrier = BarrierBatch()
             .image(m_swapchain->current_image(),
                 VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_NONE,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
             );
 
