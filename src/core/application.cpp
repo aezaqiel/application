@@ -37,7 +37,10 @@ namespace application {
             Window::poll_events();
 
             if (!m_minimized) {
-                m_renderer->draw();
+                if (m_renderer->begin_frame()) {
+                    m_renderer->draw();
+                    m_renderer->end_frame();
+                }
             }
         }
     }

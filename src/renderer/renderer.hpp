@@ -13,6 +13,7 @@
 #include "rhi/semaphores.hpp"
 #include "rhi/image.hpp"
 #include "rhi/descriptor.hpp"
+#include "rhi/pipeline.hpp"
 
 namespace application {
 
@@ -22,6 +23,8 @@ namespace application {
         Renderer(const Window& window, EventDispatcher& dispatcher);
         ~Renderer();
 
+        bool begin_frame();
+        void end_frame();
         void draw();
 
     private:
@@ -33,10 +36,13 @@ namespace application {
     private:
         struct FrameData
         {
+            DeletionQueue gc;
+
             u64 fence { 0 };
             std::unique_ptr<CommandPool> command_pool;
 
-            DeletionQueue gc;
+            std::unique_ptr<DescriptorAllocator> descriptor_allocator;
+            VkDescriptorSet draw_descriptor;
         };
 
     private:
@@ -54,16 +60,15 @@ namespace application {
         std::unique_ptr<Queue> m_compute_queue;
         std::unique_ptr<Queue> m_transfer_queue;
 
-        std::unique_ptr<DescriptorAllocator> m_descriptor_allocator;
-
         PerFrame<FrameData> m_frames;
 
         std::unique_ptr<TimelineSemaphore> m_timeline;
         u64 m_frame_index { 0 };
 
         std::unique_ptr<Image> m_draw_image;
+
         std::unique_ptr<DescriptorLayout> m_draw_layout;
-        VkDescriptorSet m_draw_set;
+        std::unique_ptr<ComputePipeline> m_draw_pipeline;
     };
 
 }

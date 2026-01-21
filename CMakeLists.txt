@@ -69,6 +69,8 @@ add_executable(${PROJECT_NAME}
     src/renderer/rhi/descriptor.cpp
     src/renderer/rhi/shader.hpp
     src/renderer/rhi/shader.cpp
+    src/renderer/rhi/pipeline.hpp
+    src/renderer/rhi/pipeline.cpp
 
     src/platform/vma_impl.cpp
 )

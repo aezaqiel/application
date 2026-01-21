@@ -24,6 +24,15 @@ namespace application {
         VK_CHECK(vkEndCommandBuffer(m_cmd));
     }
 
+    VkCommandBuffer CommandList::record(std::function<void(VkCommandBuffer)> task)
+    {
+        begin();
+        std::invoke(std::forward<std::function<void(VkCommandBuffer)>>(task), m_cmd);
+        end();
+
+        return m_cmd;
+    }
+
     VkCommandBufferSubmitInfo CommandList::submit_info() const 
     {
         return VkCommandBufferSubmitInfo {
@@ -95,6 +104,21 @@ namespace application {
         };
 
         vkCmdBlitImage2(m_cmd, &blit_info);
+    }
+
+    void CommandList::bind_pipeline(const ComputePipeline& pipeline)
+    {
+        vkCmdBindPipeline(m_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
+    }
+
+    void CommandList::bind_set(const ComputePipeline& pipeline, std::span<VkDescriptorSet> sets, u32 first)
+    {
+        vkCmdBindDescriptorSets(m_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), first, static_cast<u32>(sets.size()), sets.data(), 0, nullptr);
+    }
+
+    void CommandList::dispatch(u32 x, u32 y, u32 z)
+    {
+        vkCmdDispatch(m_cmd, x, y, z);
     }
 
     CommandPool::CommandPool(const Device* device, u32 queue_family)

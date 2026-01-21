@@ -29,10 +29,9 @@ namespace application {
         m_compute_queue = std::make_unique<Queue>(m_device.get(), m_device->compute_family());
         m_transfer_queue = std::make_unique<Queue>(m_device.get(), m_device->transfer_family());
 
-        m_descriptor_allocator = std::make_unique<DescriptorAllocator>(m_device.get());
-
         for (auto& frame : m_frames) {
             frame.command_pool = std::make_unique<CommandPool>(m_device.get(), m_device->graphics_family());
+            frame.descriptor_allocator = std::make_unique<DescriptorAllocator>(m_device.get());
         }
 
         m_timeline = std::make_unique<TimelineSemaphore>(m_device.get());
@@ -46,12 +45,16 @@ namespace application {
         });
 
         m_draw_layout = DescriptorLayout::Builder(m_device.get())
-            .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
+            .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT)
             .build();
 
-        m_draw_set = m_descriptor_allocator->allocate(*m_draw_layout);
+        std::vector<VkDescriptorSetLayout> draw_layouts {
+            m_draw_layout->layout()
+        };
 
-        Shader test(m_device.get(), "gradient.spv", VK_SHADER_STAGE_COMPUTE_BIT);
+        std::vector<VkPushConstantRange> draw_constants;
+
+        m_draw_pipeline = std::make_unique<ComputePipeline>(m_device.get(), "gradient.spv", draw_layouts, draw_constants);
     }
 
     Renderer::~Renderer()
@@ -60,7 +63,7 @@ namespace application {
         m_gc.flush();
     }
 
-    void Renderer::draw()
+    bool Renderer::begin_frame()
     {
         auto& frame = m_frames[m_frame_index % s_frames_in_flight];
 
@@ -71,45 +74,54 @@ namespace application {
 
         if (!m_swapchain->acquire()) {
             m_swapchain->create(VkExtent2D { m_width, m_height });
-            return;
+            return false;
         }
 
         frame.command_pool->reset();
+        frame.descriptor_allocator->reset();
+
+        return true;
+    }
+
+    void Renderer::end_frame()
+    {
+        if (!m_swapchain->present(m_graphics_queue->queue())) {
+            m_swapchain->create(VkExtent2D { m_width, m_height });
+        }
+    }
+
+    void Renderer::draw()
+    {
+        auto& frame = m_frames[m_frame_index % s_frames_in_flight];
+
         auto cmd = frame.command_pool->allocate();
 
         cmd.begin();
 
-        DescriptorWriter(m_device.get())
-            .write_storage_image(0, *m_draw_image)
-            .update(m_draw_set);
+        // --- COMPUTE DRAW ---
 
         auto barrier = BarrierBatch()
             .image(m_draw_image->image(),
                 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
-                VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL
             );
 
         cmd.barrier(barrier);
 
-        VkClearColorValue clear_color = {{
-            std::abs(std::cos(m_frame_index / 120.0f)),
-            std::abs(std::sin(m_frame_index / 120.0f)),
-            std::abs(std::tan(m_frame_index / 120.0f)),
-            1.0f
-        }};
+        frame.draw_descriptor = frame.descriptor_allocator->allocate(*m_draw_layout);
 
-        std::vector<VkImageSubresourceRange> clear_ranges {
-            {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = VK_REMAINING_MIP_LEVELS,
-                .baseArrayLayer = 0,
-                .layerCount = VK_REMAINING_ARRAY_LAYERS
-            }
-        };
+        DescriptorWriter(m_device.get())
+            .write_storage_image(0, *m_draw_image, VK_IMAGE_LAYOUT_GENERAL)
+            .update(frame.draw_descriptor);
 
-        cmd.clear_image(m_draw_image->image(), VK_IMAGE_LAYOUT_GENERAL, clear_color, clear_ranges);
+        std::array<VkDescriptorSet, 1> draw_sets { frame.draw_descriptor };
+        
+        cmd.bind_pipeline(*m_draw_pipeline);
+        cmd.bind_set(*m_draw_pipeline, draw_sets, 0);
+        cmd.dispatch(std::ceil(m_width / 16.0f), std::ceil(m_height / 16.0f), 1);
+
+        // --- BLIT TO SWAPCHAIN ---
 
         barrier = BarrierBatch()
             .image(m_swapchain->current_image(),
@@ -118,7 +130,7 @@ namespace application {
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             )
             .image(m_draw_image->image(),
-                VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
                 VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
             );
@@ -126,6 +138,8 @@ namespace application {
         cmd.barrier(barrier);
 
         cmd.copy_image(m_draw_image->image(), m_draw_image->extent(), m_swapchain->current_image(), { m_swapchain->width(), m_swapchain->height(), 1 });
+
+        // --- PRESENT ---
 
         barrier = BarrierBatch()
             .image(m_swapchain->current_image(),
@@ -154,10 +168,6 @@ namespace application {
         m_graphics_queue->submit(cmds, waits, signals);
 
         frame.fence = ++m_frame_index;
-
-        if (!m_swapchain->present(m_graphics_queue->queue())) {
-            m_swapchain->create(VkExtent2D { m_width, m_height });
-        }
     }
 
 }
