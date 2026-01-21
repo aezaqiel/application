@@ -12,10 +12,8 @@ namespace application {
         m_frame_index = std::numeric_limits<u64>::max();
         cleanup();
 
-        for (usize i = 0; i < m_images.size(); ++i) {
-            vkDestroyImageView(m_device.device(), m_views[i], nullptr);
-            vkDestroySemaphore(m_device.device(), m_image_acquired_semaphores[i], nullptr);
-            vkDestroySemaphore(m_device.device(), m_present_signal_semaphores[i], nullptr);
+        for (auto& view : m_views) {
+            vkDestroyImageView(m_device.device(), view, nullptr);
         }
 
         vkDestroySwapchainKHR(m_device.device(), m_swapchain, nullptr);
@@ -111,8 +109,8 @@ namespace application {
 
         m_images.resize(m_image_count);
         m_views.resize(m_image_count);
-        m_image_acquired_semaphores.resize(m_image_count);
-        m_present_signal_semaphores.resize(m_image_count);
+        m_image_acquired_semaphores.reserve(m_image_count);
+        m_present_signal_semaphores.reserve(m_image_count);
 
         VK_CHECK(vkGetSwapchainImagesKHR(m_device.device(), m_swapchain, &m_image_count, m_images.data()));
 
@@ -138,18 +136,12 @@ namespace application {
             }
         };
 
-        VkSemaphoreCreateInfo semaphore_info {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0
-        };
-
         for (usize i = 0; i < m_images.size(); ++i) {
             view_info.image = m_images[i];
             VK_CHECK(vkCreateImageView(m_device.device(), &view_info, nullptr, &m_views[i]));
 
-            VK_CHECK(vkCreateSemaphore(m_device.device(), &semaphore_info, nullptr, &m_image_acquired_semaphores[i]));
-            VK_CHECK(vkCreateSemaphore(m_device.device(), &semaphore_info, nullptr, &m_present_signal_semaphores[i]));
+            m_image_acquired_semaphores.push_back(std::make_unique<BinarySemaphore>(m_device));
+            m_present_signal_semaphores.push_back(std::make_unique<BinarySemaphore>(m_device));
         }
 
         std::println("swapchain created ({}, {}) with {} images", m_extent.width, m_extent.height, m_image_count);
@@ -157,7 +149,8 @@ namespace application {
 
     bool Swapchain::acquire()
     {
-        VkResult result = vkAcquireNextImageKHR(m_device.device(), m_swapchain, std::numeric_limits<u64>::max(), m_image_acquired_semaphores[m_frame_index % m_image_count], VK_NULL_HANDLE, &m_image_index);
+        auto semaphore = m_image_acquired_semaphores[m_frame_index % m_image_count]->semaphore();
+        VkResult result = vkAcquireNextImageKHR(m_device.device(), m_swapchain, std::numeric_limits<u64>::max(), semaphore, VK_NULL_HANDLE, &m_image_index);
 
         if (result == VK_SUCCESS) return true;
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) return false;
@@ -168,11 +161,13 @@ namespace application {
 
     bool Swapchain::present(VkQueue queue)
     {
+        auto semaphore = m_present_signal_semaphores[m_image_index]->semaphore();
+
         VkPresentInfoKHR present_info {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = nullptr,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &m_present_signal_semaphores[m_image_index],
+            .pWaitSemaphores = &semaphore,
             .swapchainCount = 1,
             .pSwapchains = &m_swapchain,
             .pImageIndices = &m_image_index,
@@ -193,26 +188,12 @@ namespace application {
 
     VkSemaphoreSubmitInfo Swapchain::acquire_wait_info()
     {
-        return VkSemaphoreSubmitInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .semaphore = m_image_acquired_semaphores[m_frame_index % m_image_count],
-            .value = 0,
-            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .deviceIndex = 0
-        };
+        return m_image_acquired_semaphores[m_frame_index % m_image_count]->submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
     }
 
     VkSemaphoreSubmitInfo Swapchain::present_signal_info()
     {
-        return VkSemaphoreSubmitInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .semaphore = m_present_signal_semaphores[m_image_index],
-            .value = 0,
-            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .deviceIndex = 0
-        };
+        return m_present_signal_semaphores[m_image_index]->submit_info(VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
     }
 
     void Swapchain::cleanup()
@@ -224,8 +205,6 @@ namespace application {
 
             for (usize i = 0; i < retired.views.size(); ++i) {
                 vkDestroyImageView(m_device.device(), retired.views[i], nullptr);
-                vkDestroySemaphore(m_device.device(), retired.acquire_semaphores[i], nullptr);
-                vkDestroySemaphore(m_device.device(), retired.present_semaphores[i], nullptr);
             }
 
             vkDestroySwapchainKHR(m_device.device(), retired.swapchain, nullptr);

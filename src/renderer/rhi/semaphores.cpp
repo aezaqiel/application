@@ -62,4 +62,33 @@ namespace application {
         };
     }
 
+    BinarySemaphore::BinarySemaphore(const Device& device)
+        : m_device(device)
+    {
+        VkSemaphoreCreateInfo semaphore_info {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0
+        };
+
+        VK_CHECK(vkCreateSemaphore(device.device(), &semaphore_info, nullptr, &m_semaphore));
+    }
+
+    BinarySemaphore::~BinarySemaphore()
+    {
+        vkDestroySemaphore(m_device.device(), m_semaphore, nullptr);
+    }
+
+    VkSemaphoreSubmitInfo BinarySemaphore::submit_info(VkPipelineStageFlags2 stage)
+    {
+        return VkSemaphoreSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .semaphore = m_semaphore,
+            .value = 0,
+            .stageMask = stage,
+            .deviceIndex = 0
+        };
+    }
+
 }

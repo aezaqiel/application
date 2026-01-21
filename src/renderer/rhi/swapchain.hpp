@@ -3,6 +3,7 @@
 #include "vktypes.hpp"
 #include "context.hpp"
 #include "device.hpp"
+#include "semaphores.hpp"
 
 namespace application {
 
@@ -47,8 +48,8 @@ namespace application {
         struct RetiredResources
         {
             std::vector<VkImageView> views;
-            std::vector<VkSemaphore> acquire_semaphores;
-            std::vector<VkSemaphore> present_semaphores;
+            std::vector<std::unique_ptr<BinarySemaphore>> acquire_semaphores;
+            std::vector<std::unique_ptr<BinarySemaphore>> present_semaphores;
 
             VkSwapchainKHR swapchain;
 
@@ -70,11 +71,10 @@ namespace application {
         std::vector<VkImage> m_images;
         std::vector<VkImageView> m_views;
 
-        std::vector<VkSemaphore> m_image_acquired_semaphores;
-        std::vector<VkSemaphore> m_present_signal_semaphores;
+        std::vector<std::unique_ptr<BinarySemaphore>> m_image_acquired_semaphores;
+        std::vector<std::unique_ptr<BinarySemaphore>> m_present_signal_semaphores;
 
         u32 m_image_index { 0 };
-        // u32 m_sync_index { 0 };
 
         u64 m_frame_index { 0 };
         std::vector<RetiredResources> m_retired;
