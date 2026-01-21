@@ -23,6 +23,7 @@ add_subdirectory(thirdparty/volk)
 add_subdirectory(thirdparty/vma)
 add_subdirectory(thirdparty/glm)
 
+set(SHADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 set(SHADER_SOURCES
     "gradient.slang"
 )
@@ -66,6 +67,8 @@ add_executable(${PROJECT_NAME}
     src/renderer/rhi/buffer.cpp
     src/renderer/rhi/descriptor.hpp
     src/renderer/rhi/descriptor.cpp
+    src/renderer/rhi/shader.hpp
+    src/renderer/rhi/shader.cpp
 
     src/platform/vma_impl.cpp
 )
@@ -73,6 +76,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -137,7 +141,7 @@ function(target_add_slang_shader target_name)
         set(ARG_OUTPUT_NAME "${FILE_NAME}.spv")
     endif()
     
-    set(SHADER_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaders/${ARG_OUTPUT_NAME}")
+    set(SHADER_OUTPUT "${SHADER_DIRECTORY}/${ARG_OUTPUT_NAME}")
     set(DEP_FILE "${SHADER_OUTPUT}.d")
 
     # 3. Construct Flags
@@ -159,7 +163,7 @@ function(target_add_slang_shader target_name)
     # We use ${CMAKE_COMMAND} -E make_directory to ensure the output folder exists
     add_custom_command(
         OUTPUT ${SHADER_OUTPUT}
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_DIRECTORY}"
         COMMAND ${SLANG_COMPILER}
             ${SHADER_SOURCE}
             -target spirv
@@ -182,3 +186,9 @@ foreach(SRC ${SHADER_SOURCES})
         FILE ${SRC}
     )
 endforeach()
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/pathconfig.inl
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/pathconfig.inl
+    @ONLY
+)

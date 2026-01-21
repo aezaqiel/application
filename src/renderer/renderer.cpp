@@ -5,6 +5,8 @@
 
 #include "rhi/barrier.hpp"
 
+#include "rhi/shader.hpp"
+
 namespace application {
 
     Renderer::Renderer(const Window& window, EventDispatcher& dispatcher)
@@ -48,6 +50,8 @@ namespace application {
             .build();
 
         m_draw_set = m_descriptor_allocator->allocate(*m_draw_layout);
+
+        Shader test(m_device.get(), "gradient.spv", VK_SHADER_STAGE_COMPUTE_BIT);
     }
 
     Renderer::~Renderer()
@@ -76,7 +80,7 @@ namespace application {
         cmd.begin();
 
         DescriptorWriter(m_device.get())
-            .write_image(0, *m_draw_image, VK_NULL_HANDLE)
+            .write_storage_image(0, *m_draw_image)
             .update(m_draw_set);
 
         auto barrier = BarrierBatch()
