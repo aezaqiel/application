@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(application C CXX)
 
 find_package(Vulkan REQUIRED)
+find_program(SLANG_COMPILER NAMES slangc REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -107,3 +108,67 @@ else()
         /D_HAS_EXCEPTIONS=0
     )
 endif()
+
+function(target_add_slang_shader target_name)
+    set(options)
+    set(oneValueArgs FILE ENTRY_POINT PROFILE OUTPUT_NAME)
+    set(multiValueArgs DEFINES)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    # 1. Validate Input
+    if(NOT ARG_FILE)
+        message(FATAL_ERROR "No FILE specified for slang shader compilation.")
+    endif()
+
+    # 2. Setup Paths
+    set(SHADER_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${ARG_FILE}")
+    
+    # Auto-generate output name if not provided (e.g., "myshader.slang" -> "myshader.spv")
+    if(NOT ARG_OUTPUT_NAME)
+        get_filename_component(FILE_NAME ${ARG_FILE} NAME_WE)
+        set(ARG_OUTPUT_NAME "${FILE_NAME}.spv")
+    endif()
+    
+    set(SHADER_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaders/${ARG_OUTPUT_NAME}")
+    set(DEP_FILE "${SHADER_OUTPUT}.d")
+
+    # 3. Construct Flags
+    set(FLAGS "")
+    
+    if(ARG_ENTRY_POINT)
+        list(APPEND FLAGS -entry ${ARG_ENTRY_POINT})
+    endif()
+
+    if(ARG_PROFILE)
+        list(APPEND FLAGS -profile ${ARG_PROFILE})
+    endif()
+
+    foreach(DEF ${ARG_DEFINES})
+        list(APPEND FLAGS -D${DEF})
+    endforeach()
+
+    # 4. Define the Command
+    # We use ${CMAKE_COMMAND} -E make_directory to ensure the output folder exists
+    add_custom_command(
+        OUTPUT ${SHADER_OUTPUT}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+        COMMAND ${SLANG_COMPILER}
+            ${SHADER_SOURCE}
+            -target spirv
+            -o ${SHADER_OUTPUT}
+            -depfile ${DEP_FILE}
+            ${FLAGS}
+            # Debug/Release flags from your original code 
+            $<IF:$<CONFIG:Debug>,-g,-O3>
+        DEPENDS ${SHADER_SOURCE}
+        DEPFILE ${DEP_FILE}
+        COMMENT "Compiling Slang shader ${ARG_FILE} -> ${ARG_OUTPUT_NAME}"
+    )
+
+    # 5. Attach to Target
+    target_sources(${target_name} PRIVATE ${SHADER_OUTPUT})
+endfunction()
+
+target_add_slang_shader(${PROJECT_NAME} 
+    FILE "gradient.slang"
+)
