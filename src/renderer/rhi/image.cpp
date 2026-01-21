@@ -2,7 +2,7 @@
 
 namespace application {
 
-    Image::Image(const Device& device, const Info& info)
+    Image::Image(const Device* device, const Info& info)
         : m_device(device)
         , m_extent(info.extent)
         , m_format(info.format)
@@ -33,7 +33,7 @@ namespace application {
             .priority = 1.0f
         };
 
-        VK_CHECK(vmaCreateImage(device.allocator(), &image_info, &allocation_info, &m_image, &m_allocation, nullptr));
+        VK_CHECK(vmaCreateImage(device->allocator(), &image_info, &allocation_info, &m_image, &m_allocation, nullptr));
 
         VkImageViewCreateInfo view_info {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -57,13 +57,13 @@ namespace application {
             }
         };
 
-        VK_CHECK(vkCreateImageView(device.device(), &view_info, nullptr, &m_view));
+        VK_CHECK(vkCreateImageView(device->device(), &view_info, nullptr, &m_view));
     }
 
     Image::~Image()
     {
-        vkDestroyImageView(m_device.device(), m_view, nullptr);
-        vmaDestroyImage(m_device.allocator(), m_image, m_allocation);
+        vkDestroyImageView(m_device->device(), m_view, nullptr);
+        vmaDestroyImage(m_device->allocator(), m_image, m_allocation);
     }
 
 }

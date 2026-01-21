@@ -15,7 +15,7 @@ namespace application {
     class Device
     {
     public:
-        Device(const Context& context);
+        Device(const Context* context);
         ~Device();
 
         Device(const Device&) = delete;
@@ -36,8 +36,6 @@ namespace application {
         void wait_idle() const;
 
     private:
-        const Context& m_context;
-
         VkPhysicalDevice m_physical_device { VK_NULL_HANDLE };
         VkDevice m_device { VK_NULL_HANDLE };
         VmaAllocator m_allocator { VK_NULL_HANDLE };

@@ -11,22 +11,22 @@ namespace application {
         : m_width(window.width()), m_height(window.height())
     {
         m_context = std::make_unique<Context>(window);
-        m_device = std::make_unique<Device>(*m_context);
+        m_device = std::make_unique<Device>(m_context.get());
 
-        m_swapchain = std::make_unique<Swapchain>(*m_context, *m_device);
+        m_swapchain = std::make_unique<Swapchain>(m_context.get(), m_device.get());
         m_swapchain->create(VkExtent2D { m_width, m_height });
 
-        m_graphics_queue = std::make_unique<Queue>(*m_device, m_device->graphics_family());
-        m_compute_queue = std::make_unique<Queue>(*m_device, m_device->compute_family());
-        m_transfer_queue = std::make_unique<Queue>(*m_device, m_device->transfer_family());
+        m_graphics_queue = std::make_unique<Queue>(m_device.get(), m_device->graphics_family());
+        m_compute_queue = std::make_unique<Queue>(m_device.get(), m_device->compute_family());
+        m_transfer_queue = std::make_unique<Queue>(m_device.get(), m_device->transfer_family());
 
         for (auto& frame : m_frames) {
-            frame.command_pool = std::make_unique<CommandPool>(*m_device, m_device->graphics_family());
+            frame.command_pool = std::make_unique<CommandPool>(m_device.get(), m_device->graphics_family());
         }
 
-        m_timeline = std::make_unique<TimelineSemaphore>(*m_device);
+        m_timeline = std::make_unique<TimelineSemaphore>(m_device.get());
 
-        m_image = std::make_unique<Image>(*m_device, Image::Info {
+        m_image = std::make_unique<Image>(m_device.get(), Image::Info {
             .extent = { m_width, m_height, 1 },
             .format = VK_FORMAT_R16G16B16A16_SFLOAT,
             .aspect = VK_IMAGE_ASPECT_COLOR_BIT,

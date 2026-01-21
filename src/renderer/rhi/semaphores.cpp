@@ -2,7 +2,7 @@
 
 namespace application {
 
-    TimelineSemaphore::TimelineSemaphore(const Device& device)
+    TimelineSemaphore::TimelineSemaphore(const Device* device)
         : m_device(device)
     {
         VkSemaphoreTypeCreateInfo type_info {
@@ -18,18 +18,18 @@ namespace application {
             .flags = 0
         };
 
-        VK_CHECK(vkCreateSemaphore(m_device.device(), &semaphore_info, nullptr, &m_semaphore));
+        VK_CHECK(vkCreateSemaphore(m_device->device(), &semaphore_info, nullptr, &m_semaphore));
     }
 
     TimelineSemaphore::~TimelineSemaphore()
     {
-        vkDestroySemaphore(m_device.device(), m_semaphore, nullptr);
+        vkDestroySemaphore(m_device->device(), m_semaphore, nullptr);
     }
 
     u64 TimelineSemaphore::value()
     {
         u64 value = 0;
-        VK_CHECK(vkGetSemaphoreCounterValue(m_device.device(), m_semaphore, &value));
+        VK_CHECK(vkGetSemaphoreCounterValue(m_device->device(), m_semaphore, &value));
 
         return value;
     }
@@ -47,7 +47,7 @@ namespace application {
             .pValues = &value
         };
 
-        VK_CHECK(vkWaitSemaphores(m_device.device(), &wait_info, std::numeric_limits<u64>::max()));
+        VK_CHECK(vkWaitSemaphores(m_device->device(), &wait_info, std::numeric_limits<u64>::max()));
     }
 
     VkSemaphoreSubmitInfo TimelineSemaphore::submit_info(u64 value, VkPipelineStageFlags2 stage)
@@ -62,7 +62,7 @@ namespace application {
         };
     }
 
-    BinarySemaphore::BinarySemaphore(const Device& device)
+    BinarySemaphore::BinarySemaphore(const Device* device)
         : m_device(device)
     {
         VkSemaphoreCreateInfo semaphore_info {
@@ -71,12 +71,12 @@ namespace application {
             .flags = 0
         };
 
-        VK_CHECK(vkCreateSemaphore(device.device(), &semaphore_info, nullptr, &m_semaphore));
+        VK_CHECK(vkCreateSemaphore(device->device(), &semaphore_info, nullptr, &m_semaphore));
     }
 
     BinarySemaphore::~BinarySemaphore()
     {
-        vkDestroySemaphore(m_device.device(), m_semaphore, nullptr);
+        vkDestroySemaphore(m_device->device(), m_semaphore, nullptr);
     }
 
     VkSemaphoreSubmitInfo BinarySemaphore::submit_info(VkPipelineStageFlags2 stage)

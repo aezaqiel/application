@@ -2,10 +2,9 @@
 
 namespace application {
 
-    Queue::Queue(const Device& device, u32 queue_family)
-        : m_device(device)
+    Queue::Queue(const Device* device, u32 queue_family)
     {
-        vkGetDeviceQueue(device.device(), queue_family, 0, &m_queue);
+        vkGetDeviceQueue(device->device(), queue_family, 0, &m_queue);
     }
 
     Queue::~Queue()

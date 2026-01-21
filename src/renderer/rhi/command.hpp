@@ -33,7 +33,7 @@ namespace application {
     class CommandPool
     {
     public:
-        CommandPool(const Device& device, u32 queue_family);
+        CommandPool(const Device* device, u32 queue_family);
         ~CommandPool();
 
         CommandPool(const CommandPool&) = delete;
@@ -44,7 +44,7 @@ namespace application {
         CommandList allocate();
 
     private:
-        const Device& m_device;
+        const Device* m_device;
 
         VkCommandPool m_pool { VK_NULL_HANDLE };
     };

@@ -2,13 +2,12 @@
 
 namespace application {
 
-    Device::Device(const Context& context)
-        : m_context(context)
+    Device::Device(const Context* context)
     {
         u32 device_count = 0;
-        vkEnumeratePhysicalDevices(context.instance(), &device_count, nullptr);
+        vkEnumeratePhysicalDevices(context->instance(), &device_count, nullptr);
         std::vector<VkPhysicalDevice> available_devices(device_count);
-        vkEnumeratePhysicalDevices(context.instance(), &device_count, available_devices.data());
+        vkEnumeratePhysicalDevices(context->instance(), &device_count, available_devices.data());
 
         for (const auto& device : available_devices) {
             VkPhysicalDeviceProperties props;
@@ -30,7 +29,7 @@ namespace application {
             u32 queue_index = 0;
             for (const auto& queue : available_queues) {
                 VkBool32 present = VK_FALSE;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, queue_index, context.surface(), &present);
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, queue_index, context->surface(), &present);
 
                 if ((queue.queueFlags & VK_QUEUE_GRAPHICS_BIT) && present == VK_TRUE) {
                     if (!graphics.has_value()) graphics = queue_index;
@@ -196,7 +195,7 @@ namespace application {
             .pDeviceMemoryCallbacks = nullptr,
             .pHeapSizeLimit = nullptr,
             .pVulkanFunctions = nullptr,
-            .instance = context.instance(),
+            .instance = context->instance(),
             .vulkanApiVersion = VK_API_VERSION_1_4
         };
 

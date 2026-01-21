@@ -8,8 +8,11 @@ namespace application {
     class TimelineSemaphore
     {
     public:
-        TimelineSemaphore(const Device& device);
+        TimelineSemaphore(const Device* device);
         ~TimelineSemaphore();
+
+        TimelineSemaphore(const TimelineSemaphore&) = delete;
+        TimelineSemaphore& operator=(const TimelineSemaphore&) = delete;
 
         VkSemaphore semaphore() const { return m_semaphore; }
 
@@ -19,7 +22,7 @@ namespace application {
         VkSemaphoreSubmitInfo submit_info(u64 value, VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
 
     private:
-        const Device& m_device;
+        const Device* m_device;
 
         VkSemaphore m_semaphore { VK_NULL_HANDLE };
     };
@@ -27,15 +30,18 @@ namespace application {
     class BinarySemaphore
     {
     public:
-        BinarySemaphore(const Device& device);
+        BinarySemaphore(const Device* device);
         ~BinarySemaphore();
+
+        BinarySemaphore(const BinarySemaphore&) = delete;
+        BinarySemaphore& operator=(const BinarySemaphore&) = delete;
 
         VkSemaphore semaphore() const { return m_semaphore; }
 
         VkSemaphoreSubmitInfo submit_info(VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
 
     private:
-        const Device& m_device;
+        const Device* m_device;
 
         VkSemaphore m_semaphore { VK_NULL_HANDLE };
     };

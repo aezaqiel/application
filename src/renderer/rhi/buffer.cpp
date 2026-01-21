@@ -2,7 +2,7 @@
 
 namespace application {
 
-    Buffer::Buffer(const Device& device, const Info& info)
+    Buffer::Buffer(const Device* device, const Info& info)
         : m_device(device)
         , m_size(info.size)
     {
@@ -22,7 +22,7 @@ namespace application {
             .usage = info.memory
         };
 
-        VK_CHECK(vmaCreateBuffer(device.allocator(), &buffer_info, &allocation_info, &m_buffer, &m_allocation, &m_info));
+        VK_CHECK(vmaCreateBuffer(device->allocator(), &buffer_info, &allocation_info, &m_buffer, &m_allocation, &m_info));
 
         if (info.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) {
             m_mapped = true;
@@ -32,7 +32,7 @@ namespace application {
     Buffer::~Buffer()
     {
         if (m_mapped) unmap();
-        vmaDestroyBuffer(m_device.allocator(), m_buffer, m_allocation);
+        vmaDestroyBuffer(m_device->allocator(), m_buffer, m_allocation);
     }
 
     VkDeviceAddress Buffer::address() const
@@ -43,7 +43,7 @@ namespace application {
             .buffer = m_buffer
         };
 
-        return vkGetBufferDeviceAddress(m_device.device(), &address_info);
+        return vkGetBufferDeviceAddress(m_device->device(), &address_info);
     }
 
     void* Buffer::map()
@@ -51,7 +51,7 @@ namespace application {
         if (m_mapped) return static_cast<void*>(m_info.pMappedData);
 
         void* data;
-        VK_CHECK(vmaMapMemory(m_device.allocator(), m_allocation, &data));
+        VK_CHECK(vmaMapMemory(m_device->allocator(), m_allocation, &data));
 
         m_mapped = true;
 
@@ -62,7 +62,7 @@ namespace application {
     {
         if (!m_mapped) return;
 
-        vmaUnmapMemory(m_device.allocator(), m_allocation);
+        vmaUnmapMemory(m_device->allocator(), m_allocation);
         m_mapped = false;
     }
 

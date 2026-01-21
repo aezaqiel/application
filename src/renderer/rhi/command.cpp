@@ -97,7 +97,7 @@ namespace application {
         vkCmdBlitImage2(m_cmd, &blit_info);
     }
 
-    CommandPool::CommandPool(const Device& device, u32 queue_family)
+    CommandPool::CommandPool(const Device* device, u32 queue_family)
         : m_device(device)
     {
         VkCommandPoolCreateInfo pool_info {
@@ -107,17 +107,17 @@ namespace application {
             .queueFamilyIndex = queue_family
         };
 
-        VK_CHECK(vkCreateCommandPool(device.device(), &pool_info, nullptr, &m_pool));
+        VK_CHECK(vkCreateCommandPool(device->device(), &pool_info, nullptr, &m_pool));
     }
 
     CommandPool::~CommandPool()
     {
-        vkDestroyCommandPool(m_device.device(), m_pool, nullptr);
+        vkDestroyCommandPool(m_device->device(), m_pool, nullptr);
     }
 
     void CommandPool::reset(VkCommandPoolResetFlags flags)
     {
-        VK_CHECK(vkResetCommandPool(m_device.device(), m_pool, flags));
+        VK_CHECK(vkResetCommandPool(m_device->device(), m_pool, flags));
     }
 
     CommandList CommandPool::allocate()
@@ -131,7 +131,7 @@ namespace application {
         };
 
         VkCommandBuffer cmd;
-        VK_CHECK(vkAllocateCommandBuffers(m_device.device(), &allocate_info, &cmd));
+        VK_CHECK(vkAllocateCommandBuffers(m_device->device(), &allocate_info, &cmd));
 
         return CommandList(cmd);
     }

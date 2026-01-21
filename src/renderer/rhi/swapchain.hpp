@@ -10,7 +10,7 @@ namespace application {
     class Swapchain
     {
     public:
-        Swapchain(const Context& context, const Device& devce);
+        Swapchain(const Context* context, const Device* devce);
         ~Swapchain();
 
         Swapchain(const Swapchain&) = delete;
@@ -57,8 +57,8 @@ namespace application {
         };
 
     private:
-        const Context& m_context;
-        const Device& m_device;
+        const Context* m_context;
+        const Device* m_device;
 
         VkSwapchainKHR m_swapchain { VK_NULL_HANDLE };
 

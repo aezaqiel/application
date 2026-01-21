@@ -17,8 +17,11 @@ namespace application {
         };
 
     public:
-        Buffer(const Device& device, const Info& info);
+        Buffer(const Device* device, const Info& info);
         ~Buffer();
+
+        Buffer(const Buffer&) = delete;
+        Buffer& operator=(const Buffer&) = delete;
 
         VkBuffer buffer() const { return m_buffer; }
         VkDeviceSize size() const { return m_size; }
@@ -29,7 +32,7 @@ namespace application {
         void unmap();
 
     private:
-        const Device& m_device;
+        const Device* m_device { nullptr };
 
         VkBuffer m_buffer { VK_NULL_HANDLE };
         VmaAllocation m_allocation { VK_NULL_HANDLE };

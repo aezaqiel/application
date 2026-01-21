@@ -8,7 +8,7 @@ namespace application {
     class Queue
     {
     public:
-        Queue(const Device& device, u32 queue_family);
+        Queue(const Device* device, u32 queue_family);
         ~Queue();
 
         Queue(const Queue&) = delete;
@@ -20,8 +20,6 @@ namespace application {
         VkSemaphoreSubmitInfo wait_info(VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) const;
 
     private:
-        const Device& m_device;
-
         VkQueue m_queue { VK_NULL_HANDLE };
     };
 

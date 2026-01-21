@@ -20,7 +20,7 @@ namespace application {
         };
 
     public:
-        Image(const Device& device, const Info& info);
+        Image(const Device* device, const Info& info);
         ~Image();
 
         Image(const Image&) = delete;
@@ -40,7 +40,7 @@ namespace application {
         u32 layers() const { return m_layers; }
 
     private:
-        const Device& m_device;
+        const Device* m_device;
 
         VkImage m_image { VK_NULL_HANDLE };
         VkImageView m_view { VK_NULL_HANDLE };
