@@ -29,7 +29,8 @@ namespace application {
         void draw();
 
     private:
-        void upload_mesh(std::span<Vertex> vertices, std::span<u32> indices);
+        GPUMeshBuffers upload_mesh(std::span<Vertex> vertices, std::span<u32> indices);
+        std::optional<std::vector<RenderObject>> load_gltf(const std::string& filename);
 
     private:
         inline static constexpr usize s_frames_in_flight { 2 };
@@ -70,8 +71,10 @@ namespace application {
         u64 m_frame_index { 0 };
 
         std::unique_ptr<Image> m_storage_image;
+        std::unique_ptr<Image> m_depth_image;
 
-        std::unique_ptr<GPUMeshBuffers> m_mesh;
+        // std::vector<std::shared_ptr<MeshAsset>> m_meshes;
+        std::vector<RenderObject> m_renderables;
 
         std::unique_ptr<DescriptorLayout> m_mesh_layouts;
         std::unique_ptr<GraphicsPipeline> m_mesh_pipeline;

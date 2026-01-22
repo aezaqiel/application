@@ -123,6 +123,7 @@ namespace application {
         VkAccessFlags2 dst_access,
         VkImageLayout old_layout,
         VkImageLayout new_layout,
+        VkImageAspectFlags aspect,
         u32 src_queue,
         u32 dst_queue
     )
@@ -140,7 +141,7 @@ namespace application {
             .dstQueueFamilyIndex = dst_queue,
             .image = image,
             .subresourceRange = {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .aspectMask = aspect,
                 .baseMipLevel = 0,
                 .levelCount = VK_REMAINING_MIP_LEVELS,
                 .baseArrayLayer = 0,

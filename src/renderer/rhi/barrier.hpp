@@ -56,6 +56,7 @@ namespace application {
             VkAccessFlags2 dst_access,
             VkImageLayout old_layout,
             VkImageLayout new_layout,
+            VkImageAspectFlags aspect,
             u32 src_queue = VK_QUEUE_FAMILY_IGNORED,
             u32 dst_queue = VK_QUEUE_FAMILY_IGNORED
         );

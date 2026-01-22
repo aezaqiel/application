@@ -121,7 +121,7 @@ namespace application {
             .front = {},
             .back = {},
             .minDepthBounds = 0.0f,
-            .maxDepthBounds = 0.0f
+            .maxDepthBounds = 1.0f
         };
 
         VkPipelineColorBlendAttachmentState color_blend_attachment {

@@ -25,6 +25,8 @@ add_subdirectory(thirdparty/glm)
 add_subdirectory(thirdparty/fastgltf)
 
 set(SHADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+set(MODEL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/models)
+
 set(SHADER_SOURCES
     "gradient.slang"
     "vertex.slang"
@@ -152,7 +154,7 @@ function(target_add_slang_shader target_name)
     set(DEP_FILE "${SHADER_OUTPUT}.d")
 
     # 3. Construct Flags
-    set(FLAGS "")
+    set(FLAGS "-fvk-use-scalar-layout")
     
     if(ARG_ENTRY_POINT)
         list(APPEND FLAGS -entry ${ARG_ENTRY_POINT})

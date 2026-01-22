@@ -40,4 +40,10 @@ namespace application {
         GPUMeshBuffers buffers;
     };
 
+    struct RenderObject
+    {
+        std::shared_ptr<MeshAsset> mesh;
+        glm::mat4 transform;
+    };
+
 }
