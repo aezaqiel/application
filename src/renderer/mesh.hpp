@@ -20,12 +20,6 @@ namespace application {
         std::unique_ptr<Buffer> vertex_buffer;
     };
 
-    struct GPUDrawPushConstants
-    {
-        glm::mat4 world_transform { 1.0f };
-        VkDeviceAddress vertex_buffer;
-    };
-
     struct GeometrySurface
     {
         u32 start_index;

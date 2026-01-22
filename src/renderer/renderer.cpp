@@ -49,21 +49,7 @@ namespace application {
 
         m_timeline = std::make_unique<TimelineSemaphore>(m_device.get());
 
-        m_storage_image = std::make_unique<Image>(m_device.get(), Image::Info {
-            .extent = { m_width, m_height, 1 },
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-            .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            .memory = VMA_MEMORY_USAGE_GPU_ONLY
-        });
-
-        m_depth_image = std::make_unique<Image>(m_device.get(), Image::Info {
-            .extent = { m_width, m_height, 1 },
-            .format = VK_FORMAT_D32_SFLOAT,
-            .aspect = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            .memory = VMA_MEMORY_USAGE_GPU_ONLY
-        });
+        m_camera = std::make_unique<Camera>(m_width, m_height, 0.001f, 1000.0f, dispatcher);
 
         if (auto model = load_gltf("sponza/main_sponza/NewSponza_Main_glTF_003.gltf")) {
             m_renderables.insert(m_renderables.begin(), model.value().begin(), model.value().end());
@@ -82,6 +68,22 @@ namespace application {
         // } else {
         //     std::println("model not loaded");
         // }
+
+        m_storage_image = std::make_unique<Image>(m_device.get(), Image::Info {
+            .extent = { m_width, m_height, 1 },
+            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+            .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .memory = VMA_MEMORY_USAGE_GPU_ONLY
+        });
+
+        m_depth_image = std::make_unique<Image>(m_device.get(), Image::Info {
+            .extent = { m_width, m_height, 1 },
+            .format = VK_FORMAT_D32_SFLOAT,
+            .aspect = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            .memory = VMA_MEMORY_USAGE_GPU_ONLY
+        });
 
         m_mesh_layouts = DescriptorLayout::Builder(m_device.get()).build();
 
@@ -140,7 +142,7 @@ namespace application {
         }
     }
 
-    void Renderer::draw()
+    void Renderer::draw(f32 dt)
     {
         auto& frame = m_frames[m_frame_index % s_frames_in_flight];
 
@@ -223,23 +225,15 @@ namespace application {
         cmd.set_viewport(0.0f, 0.0f, static_cast<f32>(m_storage_image->width()), static_cast<f32>(m_storage_image->height()), 0.0f, 1.0f);
         cmd.set_scissor(0, 0, m_storage_image->width(), m_storage_image->height());
 
-        glm::vec3 target = glm::vec3(0.0f, 1.8f, 0.0f);   // Look at the center of the hall
-        glm::vec3 eye    = glm::vec3(-12.0f, 1.8f, 0.0f); // Stand back ~12 units (meters)
-
-        // glm::vec3 target = { 159.0f, 16.0f, 2.5f };
-        // glm::vec3 eye = target + glm::vec3(20.0f, 20.0f, 20.0f);
-
-        glm::mat4 view = glm::lookAt(eye, target, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(60.0f), static_cast<f32>(m_storage_image->width()) / static_cast<f32>(m_storage_image->height()), 0.001f, 10000.0f);
-
-        proj[1][1] *= -1.0f;
+        m_camera->update(dt);
 
         for (const auto& renderable : m_renderables) {
             const auto& mesh = renderable.mesh;
             const auto& transform = renderable.transform;
 
             GPUDrawPushConstants constants {
-                .world_transform = proj * view * transform,
+                .camera = m_camera->shader_data(),
+                .transform = transform,
                 .vertex_buffer = mesh->buffers.vertex_buffer->address()
             };
 

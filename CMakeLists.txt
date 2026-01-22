@@ -28,7 +28,6 @@ set(SHADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 set(MODEL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/models)
 
 set(SHADER_SOURCES
-    "gradient.slang"
     "vertex.slang"
     "fragment.slang"
 )
@@ -49,6 +48,8 @@ add_executable(${PROJECT_NAME}
     src/renderer/renderer.hpp
     src/renderer/renderer.cpp
     src/renderer/mesh.hpp
+    src/renderer/camera.hpp
+    src/renderer/camera.cpp
 
     src/renderer/rhi/vktypes.hpp
     src/renderer/rhi/context.hpp
@@ -98,6 +99,7 @@ target_compile_definitions(${PROJECT_NAME}
 PRIVATE
     GLFW_INCLUDE_NONE
     GLM_ENABLE_EXPERIMENTAL
+    GLM_FORCE_DEPTH_ZERO_TO_ONE
 )
 
 target_precompile_headers(${PROJECT_NAME}

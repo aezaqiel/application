@@ -14,6 +14,7 @@
 #include "rhi/pipeline.hpp"
 
 #include "mesh.hpp"
+#include "camera.hpp"
 
 namespace application {
 
@@ -25,7 +26,7 @@ namespace application {
 
         bool begin_frame();
         void end_frame();
-        void draw();
+        void draw(f32 dt);
 
     private:
         GPUMeshBuffers upload_mesh(std::span<Vertex> vertices, std::span<u32> indices);
@@ -47,6 +48,13 @@ namespace application {
             VkDescriptorSet mesh_descriptor;
         };
 
+        struct GPUDrawPushConstants
+        {
+            Camera::Data camera;
+            glm::mat4 transform;
+            VkDeviceAddress vertex_buffer;
+        };
+
     private:
         u32 m_width { 0 };
         u32 m_height { 0 };
@@ -65,11 +73,11 @@ namespace application {
         std::unique_ptr<TimelineSemaphore> m_timeline;
         u64 m_frame_index { 0 };
 
+        std::unique_ptr<Camera> m_camera;
+        std::vector<RenderObject> m_renderables;
+
         std::unique_ptr<Image> m_storage_image;
         std::unique_ptr<Image> m_depth_image;
-
-        // std::vector<std::shared_ptr<MeshAsset>> m_meshes;
-        std::vector<RenderObject> m_renderables;
 
         std::unique_ptr<DescriptorLayout> m_mesh_layouts;
         std::unique_ptr<GraphicsPipeline> m_mesh_pipeline;

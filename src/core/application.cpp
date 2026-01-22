@@ -32,13 +32,21 @@ namespace application {
 
     void Application::run()
     {
+        auto last_time = std::chrono::steady_clock::now();
+
         while (m_running) {
+            auto current_time = std::chrono::steady_clock::now();
+            std::chrono::duration<f32> duration = current_time - last_time;
+            last_time = current_time;
+
+            f32 dt = duration.count();
+
             m_input->update();
             Window::poll_events();
 
             if (!m_minimized) {
                 if (m_renderer->begin_frame()) {
-                    m_renderer->draw();
+                    m_renderer->draw(dt);
                     m_renderer->end_frame();
                 }
             }
