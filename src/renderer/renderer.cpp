@@ -65,11 +65,23 @@ namespace application {
             .memory = VMA_MEMORY_USAGE_GPU_ONLY
         });
 
-        if (auto model = load_gltf("gearbox/gearbox.glb")) {
-            m_renderables = model.value();
-        } else {
-            std::println("model not loaded");
+        if (auto model = load_gltf("sponza/main_sponza/NewSponza_Main_glTF_003.gltf")) {
+            m_renderables.insert(m_renderables.begin(), model.value().begin(), model.value().end());
         }
+
+        if (auto model = load_gltf("sponza/pkg_a_curtains/NewSponza_Curtains_glTF.gltf")) {
+            m_renderables.insert(m_renderables.begin(), model.value().begin(), model.value().end());
+        }
+
+        if (auto model = load_gltf("sponza/pkg_b_ivy/NewSponza_IvyGrowth_glTF.gltf")) {
+            m_renderables.insert(m_renderables.begin(), model.value().begin(), model.value().end());
+        }
+
+        // if (auto model = load_gltf("gearbox/gearbox.glb")) {
+        //     m_renderables = model.value();
+        // } else {
+        //     std::println("model not loaded");
+        // }
 
         m_mesh_layouts = DescriptorLayout::Builder(m_device.get()).build();
 
@@ -213,10 +225,12 @@ namespace application {
         cmd.set_viewport(0.0f, 0.0f, static_cast<f32>(m_storage_image->width()), static_cast<f32>(m_storage_image->height()), 0.0f, 1.0f);
         cmd.set_scissor(0, 0, m_storage_image->width(), m_storage_image->height());
 
-        glm::vec3 target = { 159.0f, 16.0f, 2.5f };
-        glm::vec3 eye = target + glm::vec3(20.0f, 20.0f, 20.0f);
+        glm::vec3 target = glm::vec3(0.0f, 1.8f, 0.0f);   // Look at the center of the hall
+        glm::vec3 eye    = glm::vec3(-12.0f, 1.8f, 0.0f); // Stand back ~12 units (meters)
 
-        // glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 100.0f));
+        // glm::vec3 target = { 159.0f, 16.0f, 2.5f };
+        // glm::vec3 eye = target + glm::vec3(20.0f, 20.0f, 20.0f);
+
         glm::mat4 view = glm::lookAt(eye, target, glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 proj = glm::perspective(glm::radians(60.0f), static_cast<f32>(m_storage_image->width()) / static_cast<f32>(m_storage_image->height()), 0.001f, 10000.0f);
 
