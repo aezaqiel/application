@@ -45,6 +45,12 @@ namespace application {
         for (auto& frame : m_frames) {
             frame.command_pool = std::make_unique<CommandPool>(m_device.get(), m_device->graphics_family());
             frame.descriptor_allocator = std::make_unique<DescriptorAllocator>(m_device.get());
+
+            frame.camera_ubo = std::make_unique<Buffer>(m_device.get(), Buffer::Info {
+                .size = sizeof(Camera::Data),
+                .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                .memory = VMA_MEMORY_USAGE_CPU_TO_GPU
+            });
         }
 
         m_timeline = std::make_unique<TimelineSemaphore>(m_device.get());
@@ -85,7 +91,9 @@ namespace application {
             .memory = VMA_MEMORY_USAGE_GPU_ONLY
         });
 
-        m_mesh_layouts = DescriptorLayout::Builder(m_device.get()).build();
+        m_mesh_layouts = DescriptorLayout::Builder(m_device.get())
+            .add_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+            .build();
 
         std::vector<VkDescriptorSetLayout> mesh_layouts {
             m_mesh_layouts->layout()
@@ -226,13 +234,29 @@ namespace application {
         cmd.set_scissor(0, 0, m_storage_image->width(), m_storage_image->height());
 
         m_camera->update(dt);
+        auto cam_data = m_camera->shader_data();
+
+        auto cam_ubo = frame.camera_ubo->map();
+        std::memcpy(cam_ubo, &cam_data, sizeof(Camera::Data));
+        frame.camera_ubo->unmap();
+
+        frame.mesh_descriptor = frame.descriptor_allocator->allocate(*m_mesh_layouts);
+
+        DescriptorWriter(m_device.get())
+            .write_buffer(0, *frame.camera_ubo, 0, sizeof(Camera::Data), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            .update(frame.mesh_descriptor);
+
+        std::array<VkDescriptorSet, 1> mesh_sets {
+            frame.mesh_descriptor
+        };
+
+        cmd.bind_set(*m_mesh_pipeline, mesh_sets, 0);
 
         for (const auto& renderable : m_renderables) {
             const auto& mesh = renderable.mesh;
             const auto& transform = renderable.transform;
 
             GPUDrawPushConstants constants {
-                .camera = m_camera->shader_data(),
                 .transform = transform,
                 .vertex_buffer = mesh->buffers.vertex_buffer->address()
             };

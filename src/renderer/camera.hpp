@@ -14,6 +14,7 @@ namespace application {
         {
             glm::mat4 view;
             glm::mat4 proj;
+            glm::mat4 view_proj;
             glm::vec3 position;
             glm::vec4 params; // [vfov, ar, near, far]
         };

@@ -46,11 +46,12 @@ namespace application {
 
             std::unique_ptr<DescriptorAllocator> descriptor_allocator;
             VkDescriptorSet mesh_descriptor;
+
+            std::unique_ptr<Buffer> camera_ubo;
         };
 
         struct GPUDrawPushConstants
         {
-            Camera::Data camera;
             glm::mat4 transform;
             VkDeviceAddress vertex_buffer;
         };

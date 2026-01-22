@@ -67,6 +67,7 @@ namespace application {
         m_data.view = glm::translate(glm::mat4_cast(glm::conjugate(m_state.rotation)), -m_state.position);
         m_data.proj = glm::perspective(glm::radians(m_state.vfov), m_aspect, m_near, m_far);
         m_data.proj[1][1] *= -1.0f;
+        m_data.view_proj = m_data.proj * m_data.view;
         m_data.position = glm::vec4(m_state.position, 1.0f);
         m_data.params = glm::vec4(m_state.vfov, m_aspect, m_near, m_far);
     }

@@ -1,4 +1,15 @@
 
+struct CameraData
+{
+    float4x4 view;
+    float4x4 proj;
+    float4x4 view_proj;
+    float3 position;
+    float4 parameters; // [vfov, ar, near, far]
+}
+
+[[vk::binding(0, 0)]] ConstantBuffer<CameraData> camera;
+
 struct Vertex
 {
     float3 position;
@@ -7,17 +18,8 @@ struct Vertex
     float4 color;
 };
 
-struct Camera
-{
-    float4x4 view;
-    float4x4 proj;
-    float3 position;
-    float4 parameters; // [vfov, aspect_ratio, near, far]
-};
-
 struct PushConstants
 {
-    Camera camera;
     float4x4 transform;
     Vertex* vertex_buffer;
 };
@@ -35,14 +37,12 @@ struct VertexOutput
 [shader("vertex")]
 VertexOutput main(uint vertex_id : SV_VertexID)
 {
-    VertexOutput output;
-
-    Camera camera = push_constants.camera;
     Vertex vertex = push_constants.vertex_buffer[vertex_id];
 
-    float4 position = mul(camera.proj, mul(camera.view, mul(push_constants.transform, float4(vertex.position, 1.0))));
+    float4 position = mul(camera.view_proj, mul(push_constants.transform, float4(vertex.position, 1.0)));
     float3 world_normal = mul((float3x3)push_constants.transform, vertex.normal);
 
+    VertexOutput output;
     output.position = position;
     output.color = vertex.color.rgb;
     output.uv = vertex.uv;
