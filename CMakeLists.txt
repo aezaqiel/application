@@ -22,6 +22,7 @@ add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/volk)
 add_subdirectory(thirdparty/vma)
 add_subdirectory(thirdparty/glm)
+add_subdirectory(thirdparty/fastgltf)
 
 set(SHADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 set(SHADER_SOURCES
@@ -90,6 +91,7 @@ PRIVATE
     volk
     VulkanMemoryAllocator
     glm
+    fastgltf
 )
 
 target_compile_definitions(${PROJECT_NAME}
