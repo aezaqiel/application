@@ -106,6 +106,17 @@ namespace application {
         vkCmdBlitImage2(m_cmd, &blit_info);
     }
 
+    void CommandList::copy_buffer(VkBuffer src, VkDeviceSize src_offset, VkBuffer dst, VkDeviceSize dst_offset, VkDeviceSize size)
+    {
+        VkBufferCopy region {
+            .srcOffset = src_offset,
+            .dstOffset = dst_offset,
+            .size = size
+        };
+
+        vkCmdCopyBuffer(m_cmd, src, dst, 1, &region);
+    }
+
     void CommandList::bind_pipeline(const ComputePipeline& pipeline)
     {
         vkCmdBindPipeline(m_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
@@ -124,6 +135,21 @@ namespace application {
     void CommandList::bind_set(const GraphicsPipeline& pipeline, std::span<VkDescriptorSet> sets, u32 first)
     {
         vkCmdBindDescriptorSets(m_cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), first, static_cast<u32>(sets.size()), sets.data(), 0, nullptr);
+    }
+
+    void CommandList::push_constants(const ComputePipeline& pipeline, u32 offset, u32 size, const void* data)
+    {
+        vkCmdPushConstants(m_cmd, pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, offset, size, data);
+    }
+
+    void CommandList::push_constants(const GraphicsPipeline& pipeline, VkShaderStageFlags stage, u32 offset, u32 size, const void* data)
+    {
+        vkCmdPushConstants(m_cmd, pipeline.layout(), stage, offset, size, data);
+    }
+
+    void CommandList::bind_index_buffer(VkBuffer buffer, VkDeviceSize offset)
+    {
+        vkCmdBindIndexBuffer(m_cmd, buffer, offset, VK_INDEX_TYPE_UINT32);
     }
 
     void CommandList::dispatch(u32 x, u32 y, u32 z)

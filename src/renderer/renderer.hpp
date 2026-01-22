@@ -3,8 +3,6 @@
 #include "core/window.hpp"
 #include "core/events.hpp"
 
-#include "deletion_queue.hpp"
-
 #include "rhi/context.hpp"
 #include "rhi/device.hpp"
 #include "rhi/swapchain.hpp"
@@ -14,6 +12,9 @@
 #include "rhi/image.hpp"
 #include "rhi/descriptor.hpp"
 #include "rhi/pipeline.hpp"
+
+#include "deletion_queue.hpp"
+#include "mesh.hpp"
 
 namespace application {
 
@@ -26,6 +27,9 @@ namespace application {
         bool begin_frame();
         void end_frame();
         void draw();
+
+    private:
+        void upload_mesh(std::span<Vertex> vertices, std::span<u32> indices);
 
     private:
         inline static constexpr usize s_frames_in_flight { 2 };
@@ -42,7 +46,7 @@ namespace application {
             std::unique_ptr<CommandPool> command_pool;
 
             std::unique_ptr<DescriptorAllocator> descriptor_allocator;
-            VkDescriptorSet compute_descriptor;
+            VkDescriptorSet mesh_descriptor;
         };
 
     private:
@@ -67,11 +71,10 @@ namespace application {
 
         std::unique_ptr<Image> m_storage_image;
 
-        std::unique_ptr<DescriptorLayout> m_compute_layout;
-        std::unique_ptr<ComputePipeline> m_compute_pipeline;
+        std::unique_ptr<GPUMeshBuffers> m_mesh;
 
-        std::unique_ptr<DescriptorLayout> m_triangle_layout;
-        std::unique_ptr<GraphicsPipeline> m_triangle_pipeline;
+        std::unique_ptr<DescriptorLayout> m_mesh_layouts;
+        std::unique_ptr<GraphicsPipeline> m_mesh_pipeline;
     };
 
 }

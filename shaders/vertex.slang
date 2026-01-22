@@ -1,29 +1,37 @@
 
+struct Vertex
+{
+    float3 position;
+    float3 normal;
+    float2 uv;
+    float4 color;
+};
+
+struct PushConstants
+{
+    float4x4 world_transform;
+    Vertex* vertex_buffer;
+};
+
 struct VertexOutput
 {
     float4 position : SV_Position;
-    float3 color : COLOR;
+    [vk::location(0)] float3 color : COLOR0;
+    [vk::location(1)] float2 uv : TEXCOORD0;
 };
 
+[[vk::push_constant]] ConstantBuffer<PushConstants> push_constants;
+
 [shader("vertex")]
-VertexOutput main(uint vertexId : SV_VertexID)
+VertexOutput main(uint vertex_id : SV_VertexID)
 {
     VertexOutput output;
 
-    float2 positions[3] = {
-        float2(0.0, -0.5),
-        float2(0.5, 0.5),
-        float2(-0.5, 0.5)
-    };
+    Vertex vertex = push_constants.vertex_buffer[vertex_id];
 
-    float3 colors[3] = {
-        float3(1.0, 0.0, 0.0),
-        float3(0.0, 1.0, 0.0),
-        float3(0.0, 0.0, 1.0)
-    };
-
-    output.position = float4(positions[vertexId], 0.0, 1.0);
-    output.color = colors[vertexId];
+    output.position = mul(push_constants.world_transform, float4(vertex.position, 1.0f));
+    output.color = vertex.color.rgb;
+    output.uv = vertex.uv;
 
     return output;
-}
+    }

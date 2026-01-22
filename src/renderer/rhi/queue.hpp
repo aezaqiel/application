@@ -16,7 +16,9 @@ namespace application {
 
         VkQueue queue() const { return m_queue; }
 
-        void submit(std::span<VkCommandBufferSubmitInfo> cmds, std::span<VkSemaphoreSubmitInfo> waits, std::vector<VkSemaphoreSubmitInfo>& signals);
+        void wait_idle() const;
+
+        void submit(std::span<VkCommandBufferSubmitInfo> cmds, std::span<VkSemaphoreSubmitInfo> waits, std::span<VkSemaphoreSubmitInfo> signals);
         VkSemaphoreSubmitInfo wait_info(VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) const;
 
     private:

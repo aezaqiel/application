@@ -12,7 +12,12 @@ namespace application {
         vkQueueWaitIdle(m_queue);
     }
 
-    void Queue::submit(std::span<VkCommandBufferSubmitInfo> cmds, std::span<VkSemaphoreSubmitInfo> waits, std::vector<VkSemaphoreSubmitInfo>& signals)
+    void Queue::wait_idle() const
+    {
+        vkQueueWaitIdle(m_queue);
+    }
+
+    void Queue::submit(std::span<VkCommandBufferSubmitInfo> cmds, std::span<VkSemaphoreSubmitInfo> waits, std::span<VkSemaphoreSubmitInfo> signals)
     {
         VkSubmitInfo2 submit {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,

@@ -26,14 +26,22 @@ namespace application {
         VkCommandBufferSubmitInfo submit_info() const;
 
         void barrier(BarrierBatch& barrier) const;
+
         void clear_image(VkImage image, VkImageLayout layout, VkClearColorValue color, const std::vector<VkImageSubresourceRange>& ranges);
+
         void copy_image(VkImage src, VkExtent3D src_extent, VkImage dst, VkExtent3D dst_extent);
+        void copy_buffer(VkBuffer src, VkDeviceSize src_offset, VkBuffer dst, VkDeviceSize dst_offset, VkDeviceSize size);
 
         void bind_pipeline(const ComputePipeline& pipeline);
         void bind_pipeline(const GraphicsPipeline& pipeline);
 
         void bind_set(const ComputePipeline& pipeline, std::span<VkDescriptorSet> sets, u32 first);
         void bind_set(const GraphicsPipeline& pipeline, std::span<VkDescriptorSet> sets, u32 first);
+
+        void push_constants(const ComputePipeline& pipeline, u32 offset, u32 size, const void* data);
+        void push_constants(const GraphicsPipeline& pipeline, VkShaderStageFlags stage, u32 offset, u32 size, const void* data);
+
+        void bind_index_buffer(VkBuffer buffer, VkDeviceSize offset);
 
         void dispatch(u32 x, u32 y, u32 z);
 

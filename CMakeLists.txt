@@ -47,6 +47,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/renderer.cpp
     src/renderer/deletion_queue.hpp
     src/renderer/deletion_queue.cpp
+    src/renderer/mesh.hpp
 
     src/renderer/rhi/vktypes.hpp
     src/renderer/rhi/context.hpp

@@ -44,29 +44,54 @@ namespace application {
             .memory = VMA_MEMORY_USAGE_GPU_ONLY
         });
 
-        m_compute_layout = DescriptorLayout::Builder(m_device.get())
-            .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT)
-            .build();
-
-        std::vector<VkDescriptorSetLayout> compute_layouts {
-            m_compute_layout->layout()
+        std::array<Vertex, 4> vertices {
+            Vertex {
+                .position = { 0.5f, -0.5f, 0.0f },
+                .color = { 0.0f, 0.0f, 0.0f, 1.0f }
+            },
+            Vertex {
+                .position = { 0.5f, 0.5f, 0.0f },
+                .color = { 0.5f, 0.5f, 0.5f, 1.0f }
+            },
+            Vertex {
+                .position = { -0.5f, -0.5f, 0.0f },
+                .color = { 1.0f, 0.0f, 0.0f, 1.0f }
+            },
+            Vertex {
+                .position = { -0.5f, 0.5f, 0.0f },
+                .color = { 0.0f, 1.0f, 0.0f, 1.0f }
+            }
         };
 
-        m_compute_pipeline = std::make_unique<ComputePipeline>(m_device.get(), compute_layouts, std::span<VkPushConstantRange>{}, "gradient.spv");
-
-        m_triangle_layout = DescriptorLayout::Builder(m_device.get()).build();
-
-        std::vector<VkDescriptorSetLayout> triangle_layouts {
-            m_triangle_layout->layout()
+        std::array<u32, 6> indices {
+            0, 1, 2,
+            2, 1, 3
         };
 
-        m_triangle_pipeline = std::make_unique<GraphicsPipeline>(m_device.get(), triangle_layouts, std::span<VkPushConstantRange>{}, GraphicsPipeline::Info {
+        upload_mesh(vertices, indices);
+
+        m_mesh_layouts = DescriptorLayout::Builder(m_device.get()).build();
+
+        std::vector<VkDescriptorSetLayout> mesh_layouts {
+            m_mesh_layouts->layout()
+        };
+
+        std::vector<VkPushConstantRange> mesh_constants {
+            VkPushConstantRange {
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                .offset = 0,
+                .size = sizeof(GPUDrawPushConstants)
+            }
+        };
+
+        m_mesh_pipeline = std::make_unique<GraphicsPipeline>(m_device.get(), mesh_layouts, mesh_constants, GraphicsPipeline::Info {
             .vertex_name = "vertex.spv",
             .fragment_name = "fragment.spv",
             .color_formats = { m_storage_image->format() },
+            .cull_mode = VK_CULL_MODE_NONE,
             .front_face = VK_FRONT_FACE_CLOCKWISE,
             .depth_test = false,
-            .depth_write = false,
+            .depth_write = false
         });
     }
 
@@ -111,36 +136,13 @@ namespace application {
 
         cmd.begin();
 
-        // --- COMPUTE DRAW ---
+        // --- GRAPHICS DRAW ---
 
         auto barrier = BarrierBatch()
             .image(m_storage_image->image(),
                 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE,
-                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL
-            );
-
-        cmd.barrier(barrier);
-
-        frame.compute_descriptor = frame.descriptor_allocator->allocate(*m_compute_layout);
-
-        DescriptorWriter(m_device.get())
-            .write_storage_image(0, *m_storage_image, VK_IMAGE_LAYOUT_GENERAL)
-            .update(frame.compute_descriptor);
-
-        std::array<VkDescriptorSet, 1> compute_sets { frame.compute_descriptor };
-        
-        cmd.bind_pipeline(*m_compute_pipeline);
-        cmd.bind_set(*m_compute_pipeline, compute_sets, 0);
-        cmd.dispatch(std::ceil(m_storage_image->width() / 16.0f), std::ceil(m_storage_image->height() / 16.0f), 1);
-
-        // --- GRAPHICS DRAW ---
-
-        barrier = BarrierBatch()
-            .image(m_storage_image->image(),
-                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
-                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
             );
 
         cmd.barrier(barrier);
@@ -154,10 +156,10 @@ namespace application {
                 .resolveMode = VK_RESOLVE_MODE_NONE,
                 .resolveImageView = VK_NULL_HANDLE,
                 .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue = {
-                    .color = { 0.0f, 0.0f, 0.0f, 1.0f }
+                    .color = { 0.1f, 0.1f, 0.1f, 1.0f }
                 }
             }
         };
@@ -180,12 +182,21 @@ namespace application {
 
         cmd.begin_render(render_info);
 
-        cmd.bind_pipeline(*m_triangle_pipeline);
+        cmd.bind_pipeline(*m_mesh_pipeline);
+
+        GPUDrawPushConstants constants {
+            .world_transform = glm::mat4(1.0f),
+            .vertex_buffer = m_mesh->vertex_buffer->address()
+        };
+
+        cmd.push_constants(*m_mesh_pipeline, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(GPUDrawPushConstants), &constants);
+
+        cmd.bind_index_buffer(m_mesh->index_buffer->buffer(), 0);
 
         cmd.set_viewport(0.0f, 0.0f, static_cast<f32>(m_storage_image->width()), static_cast<f32>(m_storage_image->height()), 0.0f, 1.0f);
         cmd.set_scissor(0, 0, m_storage_image->width(), m_storage_image->height());
 
-        cmd.draw(3, 1, 0, 0);
+        cmd.draw_indexed(6, 1, 0, 0, 0);
 
         cmd.end_render();
 
@@ -236,6 +247,66 @@ namespace application {
         m_graphics_queue->submit(cmds, waits, signals);
 
         frame.fence = ++m_frame_index;
+    }
+
+    void Renderer::upload_mesh(std::span<Vertex> vertices, std::span<u32> indices)
+    {
+        const usize vb_size = vertices.size() * sizeof(Vertex);
+        const usize ib_size = indices.size() * sizeof(u32);
+
+        m_mesh = std::make_unique<GPUMeshBuffers>();
+
+        m_mesh->vertex_buffer = std::make_unique<Buffer>(m_device.get(), Buffer::Info {
+            .size = vb_size,
+            .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .memory = VMA_MEMORY_USAGE_GPU_ONLY
+        });
+
+        m_mesh->index_buffer = std::make_unique<Buffer>(m_device.get(), Buffer::Info {
+            .size = ib_size,
+            .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .memory = VMA_MEMORY_USAGE_GPU_ONLY
+        });
+
+        Buffer staging(m_device.get(), Buffer::Info {
+            .size = vb_size + ib_size,
+            .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            .memory = VMA_MEMORY_USAGE_CPU_ONLY
+        });
+
+        void* data = staging.map();
+
+        std::memcpy(data, vertices.data(), vb_size);
+        std::memcpy(static_cast<std::byte*>(data) + vb_size, indices.data(), ib_size);
+
+        staging.unmap();
+
+        CommandPool pool(m_device.get(), m_device->graphics_family());
+
+        auto cmd = pool.allocate();
+        cmd.begin();
+
+        cmd.copy_buffer(staging.buffer(), 0, m_mesh->vertex_buffer->buffer(), 0, vb_size);
+        cmd.copy_buffer(staging.buffer(), vb_size, m_mesh->index_buffer->buffer(), 0, ib_size);
+
+        auto barrier = BarrierBatch()
+            .buffer(*m_mesh->vertex_buffer,
+                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT, VK_ACCESS_2_MEMORY_READ_BIT
+            )
+            .buffer(*m_mesh->index_buffer,
+                VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_MEMORY_READ_BIT
+            );
+
+        cmd.barrier(barrier);
+
+        cmd.end();
+
+        std::vector<VkCommandBufferSubmitInfo> cmds { cmd.submit_info() };
+        m_graphics_queue->submit(cmds, {}, {});
+
+        m_graphics_queue->wait_idle();
     }
 
 }
