@@ -13,7 +13,6 @@
 #include "rhi/descriptor.hpp"
 #include "rhi/pipeline.hpp"
 
-#include "deletion_queue.hpp"
 #include "mesh.hpp"
 
 namespace application {
@@ -41,8 +40,6 @@ namespace application {
     private:
         struct FrameData
         {
-            DeletionQueue gc;
-
             u64 fence { 0 };
             std::unique_ptr<CommandPool> command_pool;
 
@@ -53,8 +50,6 @@ namespace application {
     private:
         u32 m_width { 0 };
         u32 m_height { 0 };
-
-        DeletionQueue m_gc;
 
         std::unique_ptr<Context> m_context;
         std::unique_ptr<Device> m_device;
