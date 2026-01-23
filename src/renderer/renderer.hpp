@@ -13,8 +13,8 @@
 #include "rhi/descriptor.hpp"
 #include "rhi/pipeline.hpp"
 
-#include "mesh.hpp"
 #include "camera.hpp"
+#include "mesh.hpp"
 
 namespace application {
 
@@ -75,6 +75,7 @@ namespace application {
         u64 m_frame_index { 0 };
 
         std::unique_ptr<Camera> m_camera;
+        std::unique_ptr<Buffer> m_scene;
         std::vector<RenderObject> m_renderables;
 
         std::unique_ptr<Image> m_storage_image;

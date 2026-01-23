@@ -32,6 +32,7 @@ struct VertexOutput
     [vk::location(0)] float3 color : COLOR0;
     [vk::location(1)] float2 uv : TEXCOORD0;
     [vk::location(2)] float3 normal: NORMAL0;
+    [vk::location(3)] float3 world_pos: POSITION0;
 };
 
 [shader("vertex")]
@@ -39,14 +40,17 @@ VertexOutput main(uint vertex_id : SV_VertexID)
 {
     Vertex vertex = push_constants.vertex_buffer[vertex_id];
 
-    float4 position = mul(camera.view_proj, mul(push_constants.transform, float4(vertex.position, 1.0)));
+    float4 world_pos = mul(push_constants.transform, float4(vertex.position, 1.0));
+    float4 position = mul(camera.view_proj, world_pos);
+
     float3 world_normal = mul((float3x3)push_constants.transform, vertex.normal);
 
     VertexOutput output;
     output.position = position;
-    output.color = vertex.color.rgb;
+    output.color = vertex.color.xyz;
     output.uv = vertex.uv;
     output.normal = normalize(world_normal);
+    output.world_pos = world_pos.xyz;
 
     return output;
 }

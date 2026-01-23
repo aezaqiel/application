@@ -14,7 +14,7 @@ namespace application {
             VkFormat format;
             VkImageAspectFlags aspect;
             VkImageUsageFlags usage;
-            u32 mips { 1 };
+            bool mipmapped { false };
             u32 layers { 1 };
             VmaMemoryUsage memory { VMA_MEMORY_USAGE_AUTO };
         };

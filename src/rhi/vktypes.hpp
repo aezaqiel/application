@@ -12,5 +12,6 @@
             __FILE__,                                            \
             __LINE__,                                            \
             string_VkResult(result_));                           \
+        std::terminate();                                        \
     }                                                            \
 } while (false)

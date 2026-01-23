@@ -51,31 +51,33 @@ add_executable(${PROJECT_NAME}
     src/renderer/camera.hpp
     src/renderer/camera.cpp
 
-    src/renderer/rhi/vktypes.hpp
-    src/renderer/rhi/context.hpp
-    src/renderer/rhi/context.cpp
-    src/renderer/rhi/device.hpp
-    src/renderer/rhi/device.cpp
-    src/renderer/rhi/swapchain.hpp
-    src/renderer/rhi/swapchain.cpp
-    src/renderer/rhi/command.hpp
-    src/renderer/rhi/command.cpp
-    src/renderer/rhi/queue.hpp
-    src/renderer/rhi/queue.cpp
-    src/renderer/rhi/semaphores.hpp
-    src/renderer/rhi/semaphores.cpp
-    src/renderer/rhi/barrier.hpp
-    src/renderer/rhi/barrier.cpp
-    src/renderer/rhi/image.hpp
-    src/renderer/rhi/image.cpp
-    src/renderer/rhi/buffer.hpp
-    src/renderer/rhi/buffer.cpp
-    src/renderer/rhi/descriptor.hpp
-    src/renderer/rhi/descriptor.cpp
-    src/renderer/rhi/shader.hpp
-    src/renderer/rhi/shader.cpp
-    src/renderer/rhi/pipeline.hpp
-    src/renderer/rhi/pipeline.cpp
+    src/rhi/vktypes.hpp
+    src/rhi/context.hpp
+    src/rhi/context.cpp
+    src/rhi/device.hpp
+    src/rhi/device.cpp
+    src/rhi/swapchain.hpp
+    src/rhi/swapchain.cpp
+    src/rhi/command.hpp
+    src/rhi/command.cpp
+    src/rhi/queue.hpp
+    src/rhi/queue.cpp
+    src/rhi/semaphores.hpp
+    src/rhi/semaphores.cpp
+    src/rhi/barrier.hpp
+    src/rhi/barrier.cpp
+    src/rhi/image.hpp
+    src/rhi/image.cpp
+    src/rhi/buffer.hpp
+    src/rhi/buffer.cpp
+    src/rhi/descriptor.hpp
+    src/rhi/descriptor.cpp
+    src/rhi/shader.hpp
+    src/rhi/shader.cpp
+    src/rhi/pipeline.hpp
+    src/rhi/pipeline.cpp
+    src/rhi/sampler.hpp
+    src/rhi/sampler.cpp
 
     src/platform/vma_impl.cpp
 )

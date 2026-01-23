@@ -189,10 +189,10 @@ namespace application {
         return *this;
     }
 
-    DescriptorWriter& DescriptorWriter::write_image(u32 binding, const Image& image, VkSampler sampler, VkImageLayout layout, VkDescriptorType type)
+    DescriptorWriter& DescriptorWriter::write_image(u32 binding, const Image& image, const Sampler& sampler, VkImageLayout layout, VkDescriptorType type)
     {
         auto& info = m_images.emplace_back(VkDescriptorImageInfo {
-            .sampler = sampler,
+            .sampler = sampler.sampler(),
             .imageView = image.view(),
             .imageLayout = layout
         });

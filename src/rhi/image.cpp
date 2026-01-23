@@ -7,7 +7,7 @@ namespace application {
         , m_extent(info.extent)
         , m_format(info.format)
         , m_aspect(info.aspect)
-        , m_mips(info.mips)
+        , m_mips(info.mipmapped ? std::floor(std::log2(std::max(info.extent.width, info.extent.height))) + 1 : 1)
         , m_layers(info.layers)
     {
         VkImageCreateInfo image_info {

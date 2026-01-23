@@ -4,6 +4,7 @@
 #include "device.hpp"
 #include "buffer.hpp"
 #include "image.hpp"
+#include "sampler.hpp"
 // #include "acceleration_structure.hpp"
 
 namespace application {
@@ -82,7 +83,7 @@ namespace application {
         ~DescriptorWriter() = default;
 
         DescriptorWriter& write_buffer(u32 binding, const Buffer& buffer, u64 offset = 0, u64 range = VK_WHOLE_SIZE, VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        DescriptorWriter& write_image(u32 binding, const Image& image, VkSampler sampler, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        DescriptorWriter& write_image(u32 binding, const Image& image, const Sampler& sampler, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         DescriptorWriter& write_storage_image(u32 binding, const Image& image, VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL);
         // auto write_as(u32 binding, const AccelerationStructure& as) -> DescriptorWriter&;
 

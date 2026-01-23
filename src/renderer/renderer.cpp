@@ -14,6 +14,8 @@
 
 #include "rhi/barrier.hpp"
 
+#include "scene.hpp"
+
 namespace application {
 
     namespace {
@@ -57,6 +59,24 @@ namespace application {
 
         m_camera = std::make_unique<Camera>(m_width, m_height, 0.001f, 1000.0f, dispatcher);
 
+        m_scene = std::make_unique<Buffer>(m_device.get(), Buffer::Info {
+            .size = sizeof(SceneData),
+            .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            .memory = VMA_MEMORY_USAGE_CPU_TO_GPU
+        });
+
+        {
+            SceneData scene {
+                .ambient_color = glm::vec4(0.05f, 0.05f, 0.15f, 1.0f),
+                .sunlight_direction = glm::vec4(glm::normalize(glm::vec3(0.5f, 1.0f, 0.2f)), 3.0f),
+                .sunlight_color = glm::vec4(1.0f, 0.95f, 0.85f, 1.0f)
+            };
+
+            auto data = m_scene->map();
+            std::memcpy(data, &scene, sizeof(SceneData));
+            m_scene->unmap();
+        }
+
         if (auto model = load_gltf("sponza/main_sponza/NewSponza_Main_glTF_003.gltf")) {
             m_renderables.insert(m_renderables.begin(), model.value().begin(), model.value().end());
         }
@@ -92,7 +112,8 @@ namespace application {
         });
 
         m_mesh_layouts = DescriptorLayout::Builder(m_device.get())
-            .add_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+            .add_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
 
         std::vector<VkDescriptorSetLayout> mesh_layouts {
@@ -244,6 +265,7 @@ namespace application {
 
         DescriptorWriter(m_device.get())
             .write_buffer(0, *frame.camera_ubo, 0, sizeof(Camera::Data), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            .write_buffer(1, *m_scene, 0, sizeof(SceneData), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
             .update(frame.mesh_descriptor);
 
         std::array<VkDescriptorSet, 1> mesh_sets {
@@ -338,7 +360,7 @@ namespace application {
 
         mesh.index_buffer = std::make_unique<Buffer>(m_device.get(), Buffer::Info {
             .size = ib_size,
-            .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             .memory = VMA_MEMORY_USAGE_GPU_ONLY
         });
 
@@ -436,7 +458,7 @@ namespace application {
                         .position = v,
                         .normal = { 0.0f, 1.0f, 0.0f },
                         .uv = { 0.0f, 0.0f },
-                        .color = { 1.0f, 0.0f, 1.0f, 1.0f }
+                        .color = { 1.0f, 1.0f, 1.0f, 1.0f }
                     };
                 });
 
