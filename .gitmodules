@@ -13,3 +13,6 @@
 [submodule "thirdparty/fastgltf"]
 	path = thirdparty/fastgltf
 	url = https://github.com/aezaqiel/fastgltf.git
+[submodule "thirdparty/stb"]
+	path = thirdparty/stb
+	url = https://github.com/nothings/stb

@@ -80,12 +80,14 @@ add_executable(${PROJECT_NAME}
     src/rhi/sampler.cpp
 
     src/platform/vma_impl.cpp
+    src/platform/stb_impl.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/generated
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stb
 )
 
 target_link_libraries(${PROJECT_NAME}
